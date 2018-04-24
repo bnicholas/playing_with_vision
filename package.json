@@ -1,12 +1,19 @@
 {
-	"name": "vision",
-	"version": "1.0.0",
-	"license": "ISC",
-	"main": "index.js",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"dependencies": {
-		"express": "^4.16.3"
-	}
+  "name": "vision",
+  "version": "1.0.0",
+  "license": "ISC",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^1.6.0",
+    "@google-cloud/vision": "^0.19.0",
+    "express": "^4.16.3",
+    "mongoose": "^5.0.16",
+    "mongoose-gridstore": "^0.1.25"
+  },
+  "devDependencies": {
+    "dotenv": "^5.0.1"
+  }
 }

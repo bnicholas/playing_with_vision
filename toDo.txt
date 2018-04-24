@@ -1,0 +1,3 @@
+* google cloud API key
+* test image path
+* store image in DB
