@@ -1,3 +1,7 @@
+* Get the image out of fs.files collection
+* POST /process endpoint that saves record returns JSON
+√ Read and Save a test image to DB
+√ GET /images endpoint that returns all the images in DB
+* HTML page for Image and Images
+*
 * google cloud API key
-* test image path
-* store image in DB
