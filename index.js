@@ -1,7 +1,15 @@
 (require('dotenv').config({ silent: process.env.NODE_ENV === 'production' }))
+const fs = require('fs')
+
+const fileData = JSON.stringify({
+  private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  client_email: process.env.GOOGLE_CLIENT_EMAIL
+})
+fs.writeFileSync(__dirname + '/ford-vision.json', fileData, {encoding:'utf8'});
+
 const express = require('express')
 const app = express()
-const fs = require('fs')
+
 const imgPath = 'images/DSC_5454.jpg'
 const mongoose = require('mongoose')
 mongoose.connect(process.env.MONGODB_URI)
@@ -12,9 +20,9 @@ const connection = mongoose.connection
 const multer = require('multer')
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
+
 const vision = require('@google-cloud/vision')
 const client = new vision.ImageAnnotatorClient()
-
 
 app.get('/vision-test', (req, res) => {
   client
