@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <title>Ford Vision - Image Uploader</title>
+    <style>
+      #drop_zone {
+        text-align: center;
+        box-sizing: border-box;
+        border: 5px solid blue;
+        width:  100%;
+        padding: 40px;
+      }
+      form { display: none }
+    </style>
+  </head>
+  <body>
+    <h1>IMAGES</h1>
+    <hr/>
+    <!-- <div id="drop_zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"> -->
+    <form id="uploader" enctype="multipart/form-data">
+      <input type="file" name="photo" id="photo" multiple=false/>
+    </form>
+
+    <div id="drop_zone">
+      <p>Drag an image file to this Drop Zone ...</p>
+    </div>
+    <div id="image_data">
+
+    </div>
+    <script src="/js/vision.js" charset="utf-8"></script>
+  </body>
+</html>

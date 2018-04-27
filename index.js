@@ -5,23 +5,19 @@ const fileData = JSON.stringify({
   private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
   client_email: process.env.GOOGLE_CLIENT_EMAIL
 })
-fs.writeFileSync(__dirname + '/ford-vision.json', fileData, {encoding:'utf8'});
+fs.writeFileSync(__dirname + '/ford-vision.json', fileData, {encoding:'utf8'})
 
 const express = require('express')
 const app = express()
 
-const imgPath = 'images/DSC_5454.jpg'
-
 const mongoose = require('mongoose')
 mongoose.connect(process.env.MONGODB_URI)
-mongoose.Promise = global.Promise;
+mongoose.Promise = global.Promise
 const connection = mongoose.connection
 const ObjectId = mongoose.Types.ObjectId
 
 const vision = require('@google-cloud/vision')
 const client = new vision.ImageAnnotatorClient()
-
-const clear = require("cli-clear")
 
 function getVisionData(img) {
   return new Promise(function(resolve, reject) {
@@ -31,6 +27,12 @@ function getVisionData(img) {
     .catch(err => reject(err))
   })
 }
+
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*")
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
+  next()
+})
 
 connection.once('open', function () {
   console.log('mongodb connection OPEN');
@@ -64,33 +66,41 @@ connection.once('open', function () {
     labels: Array
   })
 
+  function gridFsIdToBuffer(id) {
+    return new Promise(function(resolve, reject) {
+      gfs.files.findOne({ _id: id }, (err, file) => {
+        const readstream = gfs.createReadStream(file.filename)
+        let buffer = new Buffer(0)
+        readstream.on('data', chunk => buffer = Buffer.concat([buffer, chunk]))
+        readstream.on('error', err => reject(err))
+        readstream.on('end', () => resolve(buffer))
+      })
+    })
+  }
+
   app.get('/', (req, res) => res.send('hello world'))
 
   app.post('/upload', upload.single('photo'), function (req, res) {
-
-    gfs.files.findOne({ _id: req.file.id }, (err, file) => {
-      console.log(file);
-      const readstream = gfs.createReadStream(file.filename)
-      let buffer = new Buffer(0)
-      readstream.on('data', chunk => buffer = Buffer.concat([buffer, chunk]))
-      readstream.on('end', () => {
-        getVisionData(buffer)
-        .then(data => {
-          let photo = new PhotoModel
-          photo.fileID = req.file.id
-          photo.fileURL = `/image/${req.file.filename}`
-          photo.fileName = req.file.filename
-          photo.fileContentType = req.file.mimetype
-          photo.labels = data.map(item => item.description)
-          photo.save((err, photo) => {
-            console.log('photo.save');
-            console.log(photo);
-            res.send(photo)
-          })
+    gridFsIdToBuffer(req.file.id)
+    .then(buffer => {
+      getVisionData(buffer)
+      .then(data => {
+        let photo = new PhotoModel({
+          fileID: req.file.id,
+          fileURL: `/image/${req.file.filename}`,
+          fileName: req.file.filename,
+          fileContentType: req.file.mimetype,
+          labels: data.map(item => item.description)
         })
-        .catch(err => res.send(err))
+        photo.save((err, photo) => {
+          console.log('photo.save')
+          console.log(photo)
+          res.json(photo)
+        })
       })
+      .catch(err => res.send({promise: 'getVisionData', error: err}))
     })
+    .catch(err => res.send({promise: 'gridFsIdToBuffer', error: err}))
   })
 
   app.get('/image/:filename', (req, res) => {

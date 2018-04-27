@@ -1,9 +1,9 @@
-// Images model
+// Photos model
 
 // Things it should do ...
 // --------------------------------------------------
 // - Receive record parameters
-// - 
+// -
 
 // Things it shouldn't do
 // --------------------------------------------------

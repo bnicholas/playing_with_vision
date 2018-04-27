@@ -1,7 +1,23 @@
-* Get the image out of fs.files collection
-* POST /process endpoint that saves record returns JSON
-√ Read and Save a test image to DB
-√ GET /images endpoint that returns all the images in DB
-* HTML page for Image and Images
-*
-* google cloud API key
+* split routes into /api
+* make routes for html
+* display upload results
+* make an index view that displays all the images
+
+BEYOND LABELS
+
+- Is it medical, racy, adult, violent, spoofed?
+- Dominant color
+- WEB CONTENT
+  - fullMatchingImages
+  - partialMatchingImages
+  - pagesWithMatchingImages
+  - visuallySimilarImages
+  - bestGuessLabels
+- Geo results
+- EXIF meta data can be extracted without cloud-vision
+
+
+> Forensic Image Analysis
+> Product Identification
+> Copyright Infringement
+>
