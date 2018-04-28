@@ -28,11 +28,18 @@ function getVisionData(img) {
   })
 }
 
+
+app.use(express.static('public'))
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*")
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
   next()
 })
+
+app.get('/', (req, res) => {
+  res.sendfile(__dirname + '/public/upload.html')
+})
+
 
 connection.once('open', function () {
   console.log('mongodb connection OPEN');
@@ -78,16 +85,14 @@ connection.once('open', function () {
     })
   }
 
-  app.get('/', (req, res) => res.send('hello world'))
-
-  app.post('/upload', upload.single('photo'), function (req, res) {
+  app.post('/api/upload', upload.single('photo'), function (req, res) {
     gridFsIdToBuffer(req.file.id)
     .then(buffer => {
       getVisionData(buffer)
       .then(data => {
         let photo = new PhotoModel({
           fileID: req.file.id,
-          fileURL: `/image/${req.file.filename}`,
+          fileURL: `http://${req.headers.host}/image/${req.file.filename}`,
           fileName: req.file.filename,
           fileContentType: req.file.mimetype,
           labels: data.map(item => item.description)
