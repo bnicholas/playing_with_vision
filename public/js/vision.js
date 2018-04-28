@@ -13,6 +13,7 @@ function fetchVisionData() {
   const form = new FormData(document.getElementById('uploader'));
   fetch(uploadURL, { method: 'POST', body: form })
   .then(response => {
+    console.log(response)
     response.json()
     .then(res => displayUploadResult(res))
     .catch(error => console.log('ERROR', error))
@@ -27,6 +28,7 @@ dragTarget.addEventListener('dragover', evt => {
 
 dragTarget.addEventListener('drop', evt => {
   evt.preventDefault()
+  console.log('DROP', evt.dataTransfer.files)
   fileField.files = evt.dataTransfer.files
   fetchVisionData()
   evt.dataTransfer.clearData()

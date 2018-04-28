@@ -6,21 +6,43 @@ const getVisionData = require('./getVisionData.js')
 const uploader = require('./gridFsUploader.js')
 
 // Abstract all this section -----------------------------------------------
-  const mongoose = require('mongoose')
-  const connection = mongoose.createConnection(process.env.MONGODB_URI)
-  const Grid = require('gridfs-stream')
   let gfs
-
-  connection.once('open', () => {
-    gfs = Grid(connection.db, mongoose.mongo)
+  const Grid = require('gridfs-stream')
+  const mongoose = require('mongoose')
+  mongoose.connect(process.env.MONGODB_URI, null, error => {
+    gfs = Grid(mongoose.connection.db, mongoose.mongo)
     gfs.collection('photos')
   })
+
+  const PhotoSchema = mongoose.Schema({
+    fileID: String,
+    fileName: String,
+    fileURL: String,
+    fileContentType: String,
+    labels: Array
+  })
+
+  const Photo = mongoose.model('Photo', PhotoSchema)
+
+  function createPhoto(data, req) {
+    return new Promise((resolve, reject) => {
+      const photo = new Photo({
+        fileID: req.file.id,
+        fileURL: `http://${req.headers.host}/image/${req.file.filename}`,
+        fileName: req.file.filename,
+        fileContentType: req.file.mimetype,
+        labels: data.map(item => item.description)
+      })
+      photo.save((err, doc) => {
+        if (err) reject({ error: err})
+        else resolve(doc)
+      })
+    })
+  }
 
   function gridFsIdToBuffer(id) {
     return new Promise(function(resolve, reject) {
       gfs.files.findOne({ _id: id }, (err, file) => {
-        console.log('FILE', file)
-        if (err) reject(err)
         const readstream = gfs.createReadStream(file.filename)
         let buffer = new Buffer(0)
         readstream.on('data', chunk => buffer = Buffer.concat([buffer, chunk]))
@@ -30,29 +52,6 @@ const uploader = require('./gridFsUploader.js')
     })
   }
 
-  const PhotoModel = mongoose.model('Photos', {
-    fileID: String,
-    fileName: String,
-    fileURL: String,
-    fileContentType: String,
-    labels: Array
-  })
-
-  function createPhoto(data, req) {
-    return new Promise((resolve, reject) => {
-      let photo = new PhotoModel({
-        fileID: req.file.id,
-        fileURL: `http://${req.headers.host}/image/${req.file.filename}`,
-        fileName: req.file.filename,
-        fileContentType: req.file.mimetype,
-        labels: data.map(item => item.description)
-      })
-      photo.save((err, photo) => {
-        if (err) reject(err)
-        else resolve(photo)
-      })
-    })
-  }
 
 // -------------------------------------------------------------------------
 
@@ -65,9 +64,9 @@ app.post('/api/upload', uploader.single('photo'), function (req, res) {
   .then(buffer => {
     getVisionData(buffer)
     .then(data => {
-      createPhoto(data, req) // there will be more methods like this ... so ... Photo.create(data, req) ?
-      .then(photo => {
-        res.json(photo)
+      createPhoto(data, req)
+      .then(doc => {
+        res.json(doc)
       })
       .catch(err => res.send({promise: 'createPhoto', error: err}))
     })

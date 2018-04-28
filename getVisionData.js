@@ -18,7 +18,6 @@ module.exports = function(img) {
     client
     .labelDetection(img)
     .then(results => {
-      console.log(results[0].labelAnnotations)
       resolve(results[0].labelAnnotations)
     })
     .catch(err => {
