@@ -3,7 +3,7 @@ const dragTarget = document.getElementById('drop_zone')
 const fileField = document.getElementById('photo')
 const productionURL = 'https://ford-vision.herokuapp.com/api/upload'
 const devURL = 'http://localhost:5000/api/upload'
-const uploadURL = devURL
+const uploadURL = productionURL
 
 // function removeDragData(ev) {
 //   console.log('Removing drag data')
