@@ -2,7 +2,7 @@ const dragTarget = document.getElementById('drop_zone')
 const fileField = document.getElementById('photo')
 const uploadURL = window.location.href + 'api/upload'
 const allImagesURL = window.location.href + 'api/images'
-
+const formElement = document.getElementById('uploader')
 // document.getElementById('id')
 // document.getElementsByClassName('class')
 // document.getElementsByTagName('div')
@@ -27,7 +27,7 @@ let markup = []
 function addImageElementToList(record) {
   let section = []
   section.push('<section>')
-  section.push(`<img src="${record.fileURL}" />`)
+  section.push(`<img class="thumbnail" src="${record.fileURL}" />`)
   section.push('<ul>')
   record.labels.forEach(item => section.push(`<li>${item.label} : ${item.score}</li>`))
   section.push('</section>')
@@ -40,8 +40,13 @@ function fetchVisionData() {
   .then(response => response.json())
   .then(json => addImageElementToList(json))
   .then(json => updateHtml())
+  .then(json => formElement.reset())
   .catch(error => console.log('ERROR', error))
 }
+
+fileField.addEventListener('change', evt => {
+  fetchVisionData()
+})
 
 dragTarget.addEventListener('dragover', evt => {
   evt.preventDefault()
@@ -49,9 +54,7 @@ dragTarget.addEventListener('dragover', evt => {
 
 dragTarget.addEventListener('drop', evt => {
   evt.preventDefault()
-  // console.log('DROP', evt.dataTransfer.files)
   fileField.files = evt.dataTransfer.files
-  fetchVisionData()
   evt.dataTransfer.clearData()
 })
 

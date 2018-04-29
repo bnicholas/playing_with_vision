@@ -1,47 +1,23 @@
 <html>
   <head>
     <title>Ford Vision - Image Uploader</title>
-    <style>
-      #drop_zone {
-        text-align: center;
-        box-sizing: border-box;
-        border: 5px solid blue;
-        width:  100%;
-        padding: 40px;
-      }
-      form { display: none }
-      img {
-        float: left;
-        margin-right: 20px;
-        height: 150px;
-      }
-      section {
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin: 5px 10px;
-        clear: both;
-        min-height: 150px;
-      }
-      section:after {
-        contents: "";
-        clear: both;
-      }
-    </style>
+    <link rel="stylesheet" href="/css/foundation.min.css">
+    <link rel="stylesheet" href="/css/app.css">
   </head>
+
   <body>
-    <h1>UPLOAD</h1>
-    <hr/>
+    <h4>UPLOAD</h4>
     <!-- <div id="drop_zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"> -->
     <form id="uploader" enctype="multipart/form-data">
       <input type="file" name="photo" id="photo" multiple=false/>
     </form>
 
-    <div id="drop_zone">
+    <div class="callout primary" id="drop_zone">
       <p>Drag an image file to this Drop Zone ...</p>
     </div>
     <div id="image_data">
 
     </div>
-    <script src="/js/vision.js" charset="utf-8"></script>
+    <script src="/vision.js" charset="utf-8"></script>
   </body>
 </html>
