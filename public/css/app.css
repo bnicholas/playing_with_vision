@@ -31,3 +31,7 @@ ul {
   padding: 0;
   font-size: .8em;
 }
+
+.hide {
+  display: none;
+}

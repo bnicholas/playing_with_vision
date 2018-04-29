@@ -109,6 +109,17 @@ app.get('/image/:filename', (req, res) => {
   })
 })
 
+app.delete('/api/image/:id', (req, res) => {
+  Photo.findOne({ _id: req.params.id }, (err, doc) => {
+    gfs.files.deleteOne({ _id: doc.fileID }, err => {
+      Photo.deleteOne({ _id: req.params.id }, err => {
+        if (err) console.log('error deleting photo')
+        else res.send("WERD")
+      })
+    })
+  })
+})
+
 app.get('/api/images', (req, res) => {
   Photo.find(function (err, records) {
     if (err) res.send(err)

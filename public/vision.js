@@ -1,8 +1,3 @@
-const dragTarget = document.getElementById('drop_zone')
-const fileField = document.getElementById('photo')
-const uploadURL = window.location.href + 'api/upload'
-const allImagesURL = window.location.href + 'api/images'
-const formElement = document.getElementById('uploader')
 // document.getElementById('id')
 // document.getElementsByClassName('class')
 // document.getElementsByTagName('div')
@@ -21,12 +16,43 @@ const formElement = document.getElementById('uploader')
 // el.getAttribute('foo')
 // el.setAttribute('foo')
 
-const imageDataElement = document.getElementById('image_data')
 let markup = []
+let imageIdCollection = []
+let imageStore = {}
+
+const dragTarget = document.getElementById('drop_zone')
+const fileField = document.getElementById('photo')
+const uploadURL = window.location.href + 'api/upload'
+const allImagesURL = window.location.href + 'api/images'
+const formElement = document.getElementById('uploader')
+const searchElement = document.getElementById('search')
+const imageDataElement = document.getElementById('image_data')
+
+
+const imageStoreEvents = {
+  set: (obj, prop, value) => {
+    if (prop === 'visible') {
+      if (value === false) obj.el.classList.add('hide')
+      if (value === true) obj.el.classList.remove('hide')
+    }
+  }
+}
+
+function buildImageStore(records) {
+  records.forEach(record => {
+    let justLabels = record.labels.map(item => item.label)
+    imageStore[record._id] = new Proxy({
+      id: record._id,
+      labels: justLabels.join(' '),
+      visible: true,
+      el: document.getElementById(record._id)
+    }, imageStoreEvents)
+  })
+}
 
 function addImageElementToList(record) {
   let section = []
-  section.push('<section>')
+  section.push(`<section id="${record._id}">`)
   section.push(`<img class="thumbnail" src="${record.fileURL}" />`)
   section.push('<ul>')
   record.labels.forEach(item => section.push(`<li>${item.label} : ${item.score}</li>`))
@@ -46,6 +72,17 @@ function fetchVisionData() {
 
 fileField.addEventListener('change', evt => {
   fetchVisionData()
+})
+
+searchElement.addEventListener('input', evt => {
+  let searchFor = evt.target.value
+  for (let [key, value] of Object.entries(imageStore)) {
+    if (value.labels.includes(searchFor)) {
+      imageStore[key].visible = true
+    } else {
+      imageStore[key].visible = false
+    }
+  }
 })
 
 dragTarget.addEventListener('dragover', evt => {
@@ -71,7 +108,10 @@ function loadAllPhotos(photos) {
 function fetchAllPhotos() {
   fetch(allImagesURL, { method: 'GET' })
   .then(response => response.json())
-  .then(json => loadAllPhotos(json))
+  .then(json => {
+    loadAllPhotos(json)
+    buildImageStore(json)
+  })
 }
 
 fetchAllPhotos()
