@@ -1,23 +1,4 @@
-// document.getElementById('id')
-// document.getElementsByClassName('class')
-// document.getElementsByTagName('div')
-// document.querySelector('a.class')
-// document.querySelectorAll('.class')
-// document.querySelectorAll('a[target=_blank]')
-// element.insertAdjacentHTML('beforeend', `<p class="comment">${commentContent}</p>`)
-// element.classList.add('bold')
-// element.classList.remove('bold')
-// element.classList.toggle('bold')
-// el.querySelectorAll('li')
-// el.previousElementSibling
-// el.nextElementSibling
-// el.closest(selector)
-// document.querySelector('#my-input').value
-// el.getAttribute('foo')
-// el.setAttribute('foo')
-
 let markup = []
-let imageIdCollection = []
 let imageStore = {}
 
 const dragTarget = document.getElementById('drop_zone')
@@ -28,7 +9,6 @@ const formElement = document.getElementById('uploader')
 const searchElement = document.getElementById('search')
 const imageDataElement = document.getElementById('image_data')
 
-
 const imageStoreEvents = {
   set: (obj, prop, value) => {
     if (prop === 'visible') {
@@ -38,16 +18,19 @@ const imageStoreEvents = {
   }
 }
 
-function buildImageStore(records) {
-  records.forEach(record => {
-    let justLabels = record.labels.map(item => item.label)
-    imageStore[record._id] = new Proxy({
-      id: record._id,
-      labels: justLabels.join(' '),
-      visible: true,
-      el: document.getElementById(record._id)
-    }, imageStoreEvents)
+function fetchAllPhotos() {
+  fetch(allImagesURL, { method: 'GET' })
+  .then(response => response.json())
+  .then(json => {
+    loadAllPhotos(json)
+    buildImageStore(json)
   })
+}
+
+function loadAllPhotos(photos) {
+  console.log('PHOTOS: ' + photos.length)
+  photos.forEach(record => addImageElementToList(record))
+  updateHtml()
 }
 
 function addImageElementToList(record) {
@@ -58,15 +41,45 @@ function addImageElementToList(record) {
   record.labels.forEach(item => section.push(`<li>${item.label} : ${item.score}</li>`))
   section.push('</section>')
   markup = section.concat(markup)
+  return section
+}
+
+
+// THIS IS BLOWING AWAY MY el references in the storage object
+function updateHtml() {
+  imageDataElement.innerHTML = markup.join('\n')
+}
+
+function appendHtml(html) {
+  if (typeOf.Array(html)) {
+    html = html.join('\n')
+  }
+}
+
+function addImageToStore(record) {
+  let justLabels = record.labels.map(item => item.label)
+  imageStore[record._id] = new Proxy({
+    id: record._id,
+    labels: justLabels.join(' '),
+    visible: true,
+    el: document.getElementById(record._id)
+  }, imageStoreEvents)
+}
+
+function buildImageStore(records) {
+  records.forEach(record => addImageToStore(record))
 }
 
 function fetchVisionData() {
   const form = new FormData(document.getElementById('uploader'));
   fetch(uploadURL, { method: 'POST', body: form })
   .then(response => response.json())
-  .then(json => addImageElementToList(json))
-  .then(json => updateHtml())
-  .then(json => formElement.reset())
+  .then(json => {
+    addImageElementToList(json)
+    updateHtml()
+    addImageToStore(json)
+  })
+  .then(() => formElement.reset())
   .catch(error => console.log('ERROR', error))
 }
 
@@ -76,6 +89,7 @@ fileField.addEventListener('change', evt => {
 
 searchElement.addEventListener('input', evt => {
   let searchFor = evt.target.value
+  console.log(searchFor)
   for (let [key, value] of Object.entries(imageStore)) {
     if (value.labels.includes(searchFor)) {
       imageStore[key].visible = true
@@ -94,24 +108,5 @@ dragTarget.addEventListener('drop', evt => {
   fileField.files = evt.dataTransfer.files
   evt.dataTransfer.clearData()
 })
-
-function updateHtml() {
-  imageDataElement.innerHTML = markup.join('\n')
-}
-
-function loadAllPhotos(photos) {
-  console.log('PHOTOS: ' + photos.length)
-  photos.forEach(record => addImageElementToList(record))
-  updateHtml()
-}
-
-function fetchAllPhotos() {
-  fetch(allImagesURL, { method: 'GET' })
-  .then(response => response.json())
-  .then(json => {
-    loadAllPhotos(json)
-    buildImageStore(json)
-  })
-}
 
 fetchAllPhotos()

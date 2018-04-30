@@ -1,23 +1,9 @@
-* split routes into /api
-* make routes for html
-* display upload results
-* make an index view that displays all the images
+* Promise.all with await (providing a single catch)?
+* Build Objects with getters and setters
+* Error catching ... how much is enough?
+  - validating passed properties
+  - should I throw more errors?
+  -
 
-BEYOND LABELS
-
-- Is it medical, racy, adult, violent, spoofed?
-- Dominant color
-- WEB CONTENT
-  - fullMatchingImages
-  - partialMatchingImages
-  - pagesWithMatchingImages
-  - visuallySimilarImages
-  - bestGuessLabels
-- Geo results
-- EXIF meta data can be extracted without cloud-vision
-
-
-> Forensic Image Analysis
-> Product Identification
-> Copyright Infringement
->
+* Abstract my Model to a module
+* Why FormData ... const form = new FormData(document.getElementById('uploader'))
