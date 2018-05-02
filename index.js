@@ -1,14 +1,16 @@
 (require('dotenv').config({ silent: process.env.NODE_ENV === 'production' }))
 const express = require('express')
 const app = express()
-
+const bufferToStream = require('buffer-to-stream')
+const fetch = require('node-fetch')
 const getVisionData = require('./getVisionData.js')
 const uploader = require('./gridFsUploader.js')
+const fs = require('fs')
 
 const ExifImage = require('exif').ExifImage;
 
 // Abstract all this section -----------------------------------------------
-let gfs
+let gfs, host
 const Grid = require('gridfs-stream')
 const mongoose = require('mongoose')
 mongoose.connect(process.env.MONGODB_URI, null, error => {
@@ -39,23 +41,23 @@ function filterLabelConfidence(list) {
   })
 }
 
-function createPhoto(data, req) {
+function createPhoto(data, photo) {
   return new Promise((resolve, reject) => {
     let labels = data.labels.map(item => {
       let label = { label: item.description, score: item.score }
       return label
     })
-    const photo = new Photo({
-      fileID: req.file.id,
-      fileURL: `http://${req.headers.host}/image/${req.file.filename}`,
-      fileName: req.file.filename,
-      fileContentType: req.file.mimetype,
+    const newPhoto = new Photo({
+      fileID: photo._id,
+      fileURL: `http://${host}/image/${photo.filename}`,
+      fileName: photo.filename,
+      fileContentType: photo.contentType,
       labels: labels,
       exif: data.exif
     })
-    photo.save((err, doc) => {
+    newPhoto.save((err, doc) => {
       if (!err) resolve(doc)
-      else reject({ error: err})
+      else reject(err)
     })
   })
 }
@@ -81,15 +83,58 @@ function getExifData(buffer) {
   })
 }
 
-async function processUpload(req) {
-  let buffer = await gridFsIdToBuffer(req.file.id).catch(err => console.log(err))
+async function processUpload(gfsParams) {
+  let gfsPhoto = await paramsToGridFs(gfsParams).catch(err => console.log(err))
+  let buffer = await gridFsIdToBuffer(gfsPhoto._id).catch(err => console.log(err))
   let exif = await getExifData(buffer).catch(err => console.log(err))
   let vision = await getVisionData(buffer).catch(err => console.log(err))
   let labels = await filterLabelConfidence(vision).catch(err => console.log(err))
   let props = { labels: labels, exif: exif }
-  let photo = await createPhoto(props, req).catch(err => console.log(err))
+  let photo = await createPhoto(props, gfsPhoto).catch(err => console.log(err))
   return photo
 }
+
+function urlToGridFsParams(url) {
+  return new Promise((resolve, reject) => {
+    fetch(url)
+    .then(res => {
+      let chunks = []
+      let ext = '.jpg'
+      if (res.headers.get('Content-Type') === 'image/jpeg') ext = '.jpg'
+      const gridParams = {
+        content_type: res.headers.get('Content-Type'),
+        filename: new Date().getTime() + ext,
+        buffer: ''
+      }
+      res.body.on('data', chunk => {
+        chunks.push(Buffer.from(chunk, 'binary'))
+      })
+      res.body.on('end', () => {
+        gridParams.buffer = Buffer.concat(chunks)
+        resolve(gridParams)
+      })
+    })
+    .catch(error => reject(error))
+  })
+}
+
+function paramsToGridFs(params) {
+  return new Promise((resolve, reject) => {
+    let writeStream = gfs.createWriteStream({
+      filename: params.filename,
+      content_type: params.content_type,
+      root: 'photos'
+    })
+    bufferToStream(params.buffer).pipe(writeStream)
+    writeStream.on('close', file => resolve(file))
+    writeStream.on('error', error => reject(error))
+  })
+}
+
+
+const multer = require('multer')
+const storage = multer.memoryStorage()
+const upload = multer({ storage: storage })
 
 // -------------------------------------------------------------------------
 
@@ -103,9 +148,22 @@ app.use(function(req, res, next) {
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/upload.html'))
 
-app.post('/api/upload', uploader.single('photo'), async (req, res) => {
-  let photo = await processUpload(req)
-  res.send(photo)
+app.post('/api/upload', upload.single('photo'), async (req, res) => {
+  host = req.headers.host
+  if (req.file) {
+    let gridParams = {
+      content_type: req.file.mimetype,
+      filename: new Date().getTime() + req.file.originalname.slice(-4),
+      buffer: req.file.buffer
+    }
+    let fromFile = await processUpload(gridParams)
+    res.send(fromFile)
+  }
+  if (req.query.url) {
+    let gridParamsFromUrl = await urlToGridFsParams(req.query.url).catch(err => console.log(err))
+    let fromUrl = await processUpload(gridParamsFromUrl).catch(err => console.log(err))
+    res.send(fromUrl)
+  }
 })
 
 app.get('/image/:filename', (req, res) => {
@@ -137,9 +195,3 @@ app.listen(process.env.PORT || 5000, () => {
   console.log(`Ford Vision is listening on ${process.env.PORT || 5000}`)
   console.log(`NODE VERSION: ${process.version}`)
 })
-
-// process.on('unhandledRejection', r => {
-//   console.log('\n OOPS');
-//   console.log('===================================');
-//   console.log(r)
-// })

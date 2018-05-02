@@ -33,16 +33,24 @@ function loadAllPhotos(photos) {
   updateHtml()
 }
 
+// function addImageElementToList(record) {
+//   let section = []
+//   section.push(`<section id="${record._id}">`)
+//   section.push(`<img class="thumbnail" src="${record.fileURL}" />`)
+//   section.push('<ul>')
+//   record.labels.forEach(item => section.push(`<li>${item.label} : ${item.score}</li>`))
+//   section.push('</section>')
+//   markup = section.concat(markup)
+//   return section
+// }
+
 function addImageElementToList(record) {
   let section = []
-  section.push(`<section id="${record._id}">`)
-  section.push(`<img class="thumbnail" src="${record.fileURL}" />`)
-  section.push('<ul>')
-  record.labels.forEach(item => section.push(`<li>${item.label} : ${item.score}</li>`))
-  section.push('</section>')
+  section.push(`<img id="${record._id}" class="thumbnail" src="${record.fileURL}" />`)
   markup = section.concat(markup)
   return section
 }
+
 
 
 // THIS IS BLOWING AWAY MY el references in the storage object
