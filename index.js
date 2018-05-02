@@ -5,15 +5,18 @@ const bodyParser = require('body-parser')
 const bufferToStream = require('buffer-to-stream')
 const fetch = require('node-fetch')
 const getVisionData = require('./getVisionData.js')
-const uploader = require('./gridFsUploader.js')
 const fs = require('fs')
+const ExifImage = require('exif').ExifImage
 
-const ExifImage = require('exif').ExifImage;
 
 // Abstract all this section -----------------------------------------------
 let gfs, host
 const Grid = require('gridfs-stream')
 const mongoose = require('mongoose')
+const multer = require('multer')
+const storage = multer.memoryStorage()
+const upload = multer({ storage: storage })
+
 mongoose.connect(process.env.MONGODB_URI, null, error => {
   gfs = Grid(mongoose.connection.db, mongoose.mongo)
   gfs.collection('photos')
@@ -132,10 +135,6 @@ function paramsToGridFs(params) {
   })
 }
 
-
-const multer = require('multer')
-const storage = multer.memoryStorage()
-const upload = multer({ storage: storage })
 
 // -------------------------------------------------------------------------
 
