@@ -1,6 +1,7 @@
 (require('dotenv').config({ silent: process.env.NODE_ENV === 'production' }))
 const express = require('express')
 const app = express()
+const bodyParser = require('body-parser')
 const bufferToStream = require('buffer-to-stream')
 const fetch = require('node-fetch')
 const getVisionData = require('./getVisionData.js')
@@ -139,7 +140,7 @@ const upload = multer({ storage: storage })
 // -------------------------------------------------------------------------
 
 app.use(express.static('public'))
-
+app.use(bodyParser.json())
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*")
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
@@ -150,6 +151,7 @@ app.get('/', (req, res) => res.sendFile(__dirname + '/public/upload.html'))
 
 app.post('/api/upload', upload.single('photo'), async (req, res) => {
   host = req.headers.host
+  const imageURL = req.body.photo || req.query.url
   if (req.file) {
     let gridParams = {
       content_type: req.file.mimetype,
@@ -159,8 +161,8 @@ app.post('/api/upload', upload.single('photo'), async (req, res) => {
     let fromFile = await processUpload(gridParams)
     res.send(fromFile)
   }
-  if (req.query.url) {
-    let gridParamsFromUrl = await urlToGridFsParams(req.query.url).catch(err => console.log(err))
+  if (imageURL) {
+    let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.log(err))
     let fromUrl = await processUpload(gridParamsFromUrl).catch(err => console.log(err))
     res.send(fromUrl)
   }
