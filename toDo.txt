@@ -1,9 +1,0 @@
-* Promise.all with await (providing a single catch)?
-* Build Objects with getters and setters
-* Error catching ... how much is enough?
-  - validating passed properties
-  - should I throw more errors?
-  -
-
-* Abstract my Model to a module
-* Why FormData ... const form = new FormData(document.getElementById('uploader'))
