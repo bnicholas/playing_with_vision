@@ -17,11 +17,16 @@ body {
   vertical-align: top;
 }
 
+.gps {
+  border-color: red;
+}
+
 section {
-  border: 1px solid #ccc;
+  display: inline-block;
+  /* border: 1px solid #ccc;
   padding: 10px;
   margin: 5px 0;
-  display: inline-block;
+  display: inline-block; */
 }
 
 ul {

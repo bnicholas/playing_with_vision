@@ -13,6 +13,7 @@ const ExifImage = require('exif').ExifImage
 let gfs, host
 const Grid = require('gridfs-stream')
 const mongoose = require('mongoose')
+const timestamps = require('mongoose-timestamp')
 const multer = require('multer')
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
@@ -30,6 +31,7 @@ const PhotoSchema = mongoose.Schema({
   labels: Array,
   exif: mongoose.Schema.Types.Mixed
 })
+PhotoSchema.plugin(timestamps)
 
 const Photo = mongoose.model('Photo', PhotoSchema)
 
@@ -89,9 +91,9 @@ function getExifData(buffer) {
 
 async function processUpload(gfsParams) {
   let gfsPhoto = await paramsToGridFs(gfsParams).catch(err => console.log(err))
-  let buffer = await gridFsIdToBuffer(gfsPhoto._id).catch(err => console.log(err))
-  let exif = await getExifData(buffer).catch(err => console.log(err))
-  let vision = await getVisionData(buffer).catch(err => console.log(err))
+  // let buffer = await gridFsIdToBuffer(gfsPhoto._id).catch(err => console.log(err))
+  let exif = await getExifData(gfsParams.buffer).catch(err => console.log(err))
+  let vision = await getVisionData(gfsParams.buffer).catch(err => console.log(err))
   let labels = await filterLabelConfidence(vision).catch(err => console.log(err))
   let props = { labels: labels, exif: exif }
   let photo = await createPhoto(props, gfsPhoto).catch(err => console.log(err))

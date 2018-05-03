@@ -28,7 +28,6 @@ function fetchAllPhotos() {
 }
 
 function loadAllPhotos(photos) {
-  console.log('PHOTOS: ' + photos.length)
   photos.forEach(record => addImageElementToList(record))
   updateHtml()
 }
@@ -46,12 +45,15 @@ function loadAllPhotos(photos) {
 
 function addImageElementToList(record) {
   let section = []
-  section.push(`<img id="${record._id}" class="thumbnail" src="${record.fileURL}" />`)
+  let classNames = ['thumbnail']
+  if (record.exif && record.exif.gps) classNames.push('gps')
+  section.push('<section class="image">')
+  section.push(`<img id="${record._id}" class="${classNames.join(' ')}" src="${record.fileURL}" />`)
+  section.push(`<p style="display: none">${JSON.stringify(record)}</p>`)
+  section.push('</section>')
   markup = section.concat(markup)
   return section
 }
-
-
 
 // THIS IS BLOWING AWAY MY el references in the storage object
 function updateHtml() {
@@ -64,7 +66,13 @@ function appendHtml(html) {
   }
 }
 
+function hasExif(record) {
+  if (record.exif.gps) console.log('EXIF', record.exif.gps)
+}
+
 function addImageToStore(record) {
+  if (record.exif) hasExif(record)
+
   let justLabels = record.labels.map(item => item.label)
   imageStore[record._id] = new Proxy({
     id: record._id,
@@ -96,7 +104,7 @@ fileField.addEventListener('change', evt => {
 })
 
 searchElement.addEventListener('input', evt => {
-  let searchFor = evt.target.value
+  let searchFor = evt.target.value.toLowerCase()
   console.log(searchFor)
   for (let [key, value] of Object.entries(imageStore)) {
     if (value.labels.includes(searchFor)) {

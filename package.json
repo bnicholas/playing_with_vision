@@ -15,6 +15,7 @@
 		"express": "^4.16.3",
 		"gridfs-stream": "^1.1.1",
 		"mongoose": "^5.0.16",
+		"mongoose-timestamp": "^0.6.0",
 		"multer": "^1.3.0",
 		"node-fetch": "^2.1.2"
 	},
