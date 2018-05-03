@@ -47,8 +47,8 @@ function addImageElementToList(record) {
   let section = []
   let classNames = ['thumbnail']
   if (record.exif && record.exif.gps) classNames.push('gps')
-  section.push('<section class="image">')
-  section.push(`<img id="${record._id}" class="${classNames.join(' ')}" src="${record.fileURL}" />`)
+  section.push(`<section id="${record._id}" class="image">`)
+  section.push(`<img class="${classNames.join(' ')}" src="${record.fileURL}" />`)
   section.push(`<p style="display: none">${JSON.stringify(record)}</p>`)
   section.push('</section>')
   markup = section.concat(markup)
