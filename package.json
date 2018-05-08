@@ -15,7 +15,6 @@
 		"express": "^4.16.3",
 		"gm": "^1.23.1",
 		"gridfs-stream": "^1.1.1",
-		"imagemagick-native": "^1.9.3",
 		"lodash": "^4.17.10",
 		"mongoose": "^5.0.16",
 		"mongoose-tags": "^0.6.0",
