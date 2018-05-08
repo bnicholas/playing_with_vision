@@ -8,7 +8,7 @@ const getVisionData = require('./getVisionData.js')
 const fs = require('fs')
 const ExifImage = require('exif').ExifImage
 const _difference = require('lodash/difference')
-const imagemagick = require('imagemagick-native')
+const gm = require('gm')
 
 // Abstract all this section -----------------------------------------------
 let gfs, host
@@ -33,7 +33,7 @@ const PhotoSchema = mongoose.Schema({
   exif: mongoose.Schema.Types.Mixed,
   colors: Array,
   crop: Array,
-  thumbnail: { data: Buffer, contentType: String },
+  thumbnail: Buffer,
   thumbnailURL: String
 })
 PhotoSchema.plugin(timestamps)
@@ -152,7 +152,8 @@ async function processUpload(gfsParams) {
     thumbnail: thumbnail
   }
   let photo = await createPhoto(props, gfsPhoto).catch(err => console.log(err))
-  console.log(photo)
+  console.log(photo.thumbnail)
+  console.log(photo.thumbnailURL)
   return photo
 }
 
@@ -194,24 +195,13 @@ function paramsToGridFs(params) {
 }
 
 function generateThumbnail(imageBuffer) {
-  let options = {
-    srcData:        imageBuffer,
-    quality:        75,
-    height:         240,
-    width:          320,
-    resizeStyle:    'aspectfit',
-    format:         'JPEG',
-    strip:          true,
-    flip:           false,
-    autoOrient:     false,
-    debug:          false,
-    ignoreWarnings: false
-  }
   return new Promise((resolve, reject) => {
-    imagemagick.convert(options, (err, buffer) => {
+    gm(imageBuffer, 'image.jpg')
+    .resize(null, 200)
+    .toBuffer((err, buffer) => {
       if (err) reject(err)
-      let thumbnail = { contentType: 'image/jpeg', data: buffer }
-      resolve(thumbnail)
+      console.log(buffer)
+      resolve(buffer)
     })
   })
 }
@@ -263,8 +253,8 @@ app.get('/image/:filename', (req, res) => {
 app.get('/thumbnail/:id', (req, res) => {
   Photo.findById(req.params.id, (err, photo) => {
     if (err) res.send(err)
-    res.contentType(photo.thumbnail.contentType)
-    res.send(photo.thumbnail.data)
+    res.contentType('image/jpeg')
+    res.send(photo.thumbnail)
   })
 })
 
@@ -286,7 +276,8 @@ app.delete('/api/image/:id', (req, res) => {
 
 app.get('/api/images', async (req, res) => {
   let response = { count: {} }
-  response.count.files = await gfs.files.find({}).count()
+  let count = await gfs.files.find({}).count().catch(err => { console.log(err) })
+  response.count.files = count
   Photo.find(function (err, records) {
     if (err) res.send(err)
     response.records = records
