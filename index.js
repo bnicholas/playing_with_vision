@@ -35,7 +35,8 @@ const PhotoSchema = mongoose.Schema({
   crop: Array,
   thumbnail: Buffer,
   thumbnailURL: String
-})
+}, { strict: false })
+
 PhotoSchema.plugin(timestamps)
 
 PhotoSchema.pre('remove', async function() {
@@ -148,12 +149,12 @@ async function processUpload(gfsParams) {
     labels: labels,
     exif: exif,
     colors: vision.props.dominantColors.colors,
-    crop: vision.crop.cropHints[0].boundingPoly.vertices,
+    crop: vision.crop.cropHints,
     thumbnail: thumbnail
   }
   let photo = await createPhoto(props, gfsPhoto).catch(err => console.log(err))
   // console.log(photo.thumbnail)
-  console.log(photo.thumbnailURL)
+  console.log(photo.crop)
   return photo
 }
 
@@ -210,15 +211,16 @@ function gmToBuffer (data) {
 
 function generateThumbnail(imageBuffer) {
   return new Promise((resolve, reject) => {
-    const data = gm(imageBuffer, 'image.jpg').resize(null, 200)
-    gmToBuffer(data)
-    .then(buffer => resolve(buffer))
-    .catch(error => reject(error))
-    // .toBuffer((err, buffer) => {
-    //   if (err) reject(err)
-    //   console.log(buffer)
-    //   resolve(buffer)
-    // })
+    gm(imageBuffer, 'image.jpg').resize(null, 200)
+    .toBuffer((err, buffer) => {
+      if (err) reject(err)
+      console.log(buffer)
+      resolve(buffer)
+    })
+    // gmToBuffer(data)
+    // .then(buffer => resolve(buffer))
+    // .catch(error => reject(error))
+
   })
 }
 // -------------------------------------------------------------------------
