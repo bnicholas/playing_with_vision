@@ -194,15 +194,31 @@ function paramsToGridFs(params) {
   })
 }
 
+function gmToBuffer (data) {
+  return new Promise((resolve, reject) => {
+    data.stream((err, stdout, stderr) => {
+      if (err) { return reject(err) }
+      const chunks = []
+      stdout.on('data', (chunk) => { chunks.push(chunk) })
+      // these are 'once' because they can and do fire multiple times for multiple errors,
+      // but this is a promise so you'll have to deal with them one at a time
+      stdout.once('end', () => { resolve(Buffer.concat(chunks)) })
+      // stderr.once('data', (data) => { reject(String(data)) })
+    })
+  })
+}
+
 function generateThumbnail(imageBuffer) {
   return new Promise((resolve, reject) => {
-    gm(imageBuffer, 'image.jpg')
-    .resize(null, 200)
-    .toBuffer((err, buffer) => {
-      if (err) reject(err)
-      console.log(buffer)
-      resolve(buffer)
-    })
+    const data = gm(imageBuffer, 'image.jpg').resize(null, 200)
+    gmToBuffer(data)
+    .then(buffer => resolve(buffer))
+    .catch(error => reject(error))
+    // .toBuffer((err, buffer) => {
+    //   if (err) reject(err)
+    //   console.log(buffer)
+    //   resolve(buffer)
+    // })
   })
 }
 // -------------------------------------------------------------------------
