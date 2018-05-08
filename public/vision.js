@@ -8,6 +8,7 @@ const allImagesURL = window.location.href + 'api/images'
 const formElement = document.getElementById('uploader')
 const searchElement = document.getElementById('search')
 const imageDataElement = document.getElementById('image_data')
+const uploadContainer = document.getElementById('upload_container')
 
 function fetchAllPhotos() {
   markup = []
@@ -25,9 +26,18 @@ function buildImageStore(records) {
   records.forEach(record => addImageToStore(record))
 }
 
+function addUploadIndicator() {
+  uploadContainer.classList.add('uploading')
+}
+
+function removeUploadIndicator() {
+  uploadContainer.classList.remove('uploading')
+}
+
 function loadAllPhotos(photos) {
   photos.forEach(record => addImageElementToList(record))
   updateHtml()
+  removeUploadIndicator()
   addImageHandlers()
 }
 
@@ -89,6 +99,7 @@ function addImageToStore(record) {
 }
 
 function fetchVisionData() {
+  addUploadIndicator()
   const form = new FormData(document.getElementById('uploader'));
   fetch(uploadURL, { method: 'POST', body: form })
   .then(response => response.json())

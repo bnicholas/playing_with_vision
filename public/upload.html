@@ -6,17 +6,25 @@
   </head>
 
   <body>
-    <h4>UPLOAD</h4>
+
     <!-- <div id="drop_zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"> -->
-    <form id="uploader" enctype="multipart/form-data">
-      <input type="file" name="photo" id="photo" multiple=false/>
-    </form>
+    <div class="upload_container" id="upload_container">
+      <h4>UPLOAD<span>ING</span><img src="https://i.gifer.com/BXXg.gif" /></h4>
 
-    <input type="text" id="search" placeholder="type to filter images" />
+      <form id="uploader" enctype="multipart/form-data">
+        <input type="file" name="photo" id="photo" multiple=false/>
+      </form>
 
-    <div class="callout primary" id="drop_zone">
-      <p>Drag an image file to this Drop Zone ...</p>
+      <input type="text" id="search" placeholder="type to filter images" />
+
+      <div class="callout primary" id="drop_zone">
+        <p>Drag an image file to this Drop Zone ...</p>
+      </div>
+
+
+
     </div>
+
     <div id="image_data">
 
     </div>
