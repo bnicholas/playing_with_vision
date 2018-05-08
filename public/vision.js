@@ -41,7 +41,7 @@ function addImageElementToList(record) {
   if (record.exif && record.exif.gps) classNames.push('gps')
   section.push(`<section id="${record._id}" class="image">`)
   section.push(`<a href="" data-record="${record._id}" class="delete">x</a>`)
-  section.push(`<img class="${classNames.join(' ')}" src="${record.fileURL}" />`)
+  section.push(`<img class="${classNames.join(' ')}" src="${record.thumbnailURL}" />`)
   section.push(`<p style="display: none">${JSON.stringify(record)}</p>`)
   section.push('</section>')
   markup = section.concat(markup)

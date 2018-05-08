@@ -7,7 +7,8 @@ const fetch = require('node-fetch')
 const getVisionData = require('./getVisionData.js')
 const fs = require('fs')
 const ExifImage = require('exif').ExifImage
-const _ = require('lodash')
+const _difference = require('lodash/difference')
+const imagemagick = require('imagemagick-native')
 
 // Abstract all this section -----------------------------------------------
 let gfs, host
@@ -31,7 +32,9 @@ const PhotoSchema = mongoose.Schema({
   labels: Array,
   exif: mongoose.Schema.Types.Mixed,
   colors: Array,
-  crop: Array
+  crop: Array,
+  thumbnail: { data: Buffer, contentType: String },
+  thumbnailURL: String
 })
 PhotoSchema.plugin(timestamps)
 
@@ -70,8 +73,12 @@ function createPhoto(data, photo) {
       fileName: photo.filename,
       fileContentType: photo.contentType,
       labels: labels,
-      exif: data.exif
+      exif: data.exif,
+      colors: data.colors,
+      crop: data.crop,
+      thumbnail: data.thumbnail
     })
+    newPhoto.set({ thumbnailURL: `http://${host}/thumbnail/${newPhoto._id}` })
     newPhoto.save((err, doc) => {
       if (!err) resolve(doc)
       else reject(err)
@@ -120,7 +127,7 @@ async function removeOrphanedFiles() {
     let toRemove = await Photo.distinct('fileID')
     let gridIDs = await gfs.files.distinct('_id')
     let removeFrom = gridIDs.map(item => `${item}`)
-    let idsToDelete = _.difference(removeFrom, toRemove)
+    let idsToDelete = _difference(removeFrom, toRemove)
     for (let id of idsToDelete) {
       await deleteFileById(id)
     }
@@ -136,9 +143,16 @@ async function processUpload(gfsParams) {
   let exif = await getExifData(gfsParams.buffer).catch(err => console.log(err))
   let vision = await getVisionData(gfsParams.buffer).catch(err => console.log(err))
   let labels = await filterLabelConfidence(vision.labels).catch(err => console.log(err))
-  let props = { labels: labels, exif: exif, colors: vision.props.dominantColors.colors, crop: vision.crop.cropHints[0].boundingPoly.vertices }
+  let thumbnail = await generateThumbnail(gfsParams.buffer).catch(err => { console.log(err) })
+  let props = {
+    labels: labels,
+    exif: exif,
+    colors: vision.props.dominantColors.colors,
+    crop: vision.crop.cropHints[0].boundingPoly.vertices,
+    thumbnail: thumbnail
+  }
   let photo = await createPhoto(props, gfsPhoto).catch(err => console.log(err))
-  // fs.writeFileSync('./visionData.json', JSON.stringify(vision))
+  console.log(photo)
   return photo
 }
 
@@ -176,6 +190,29 @@ function paramsToGridFs(params) {
     bufferToStream(params.buffer).pipe(writeStream)
     writeStream.on('close', file => resolve(file))
     writeStream.on('error', error => reject(error))
+  })
+}
+
+function generateThumbnail(imageBuffer) {
+  let options = {
+    srcData:        imageBuffer,
+    quality:        75,
+    height:         240,
+    width:          320,
+    resizeStyle:    'aspectfit',
+    format:         'JPEG',
+    strip:          true,
+    flip:           false,
+    autoOrient:     false,
+    debug:          false,
+    ignoreWarnings: false
+  }
+  return new Promise((resolve, reject) => {
+    imagemagick.convert(options, (err, buffer) => {
+      if (err) reject(err)
+      let thumbnail = { contentType: 'image/jpeg', data: buffer }
+      resolve(thumbnail)
+    })
   })
 }
 
@@ -220,6 +257,14 @@ app.get('/image/:filename', (req, res) => {
   gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
     const readstream = gfs.createReadStream(file.filename)
     readstream.pipe(res)
+  })
+})
+
+app.get('/thumbnail/:id', (req, res) => {
+  Photo.findById(req.params.id, (err, photo) => {
+    if (err) res.send(err)
+    res.contentType(photo.thumbnail.contentType)
+    res.send(photo.thumbnail.data)
   })
 })
 
