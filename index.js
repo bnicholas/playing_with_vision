@@ -203,7 +203,7 @@ function gmToBuffer (data) {
       // these are 'once' because they can and do fire multiple times for multiple errors,
       // but this is a promise so you'll have to deal with them one at a time
       stdout.on('end', () => { resolve(Buffer.concat(chunks)) })
-      // stderr.once('data', (data) => { reject(String(data)) })
+      stderr.once('data', (data) => { reject(String(data)) })
     })
   })
 }
