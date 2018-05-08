@@ -15,13 +15,19 @@ const client = new vision.ImageAnnotatorClient()
 
 module.exports = function(img) {
   return new Promise(function(resolve, reject) {
-    client
-    .labelDetection(img)
-    .then(results => {
-      resolve(results[0].labelAnnotations)
+    const labels = client.labelDetection(img)
+    const props = client.imageProperties(img)
+    Promise.all([labels, props])
+    .then(values => {
+      const visionData = {
+        labels: values[0][0].labelAnnotations,
+        crop: values[1][0].cropHintsAnnotation,
+        props: values[1][0].imagePropertiesAnnotation
+      }
+      resolve(visionData)
     })
-    .catch(err => {
-      reject(err)
+    .catch(error => {
+      reject(error)
     })
   })
 }

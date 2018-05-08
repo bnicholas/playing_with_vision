@@ -15,8 +15,9 @@ function fetchAllPhotos() {
   fetch(allImagesURL, { method: 'GET' })
   .then(response => response.json())
   .then(json => {
-    loadAllPhotos(json)
-    buildImageStore(json)
+    loadAllPhotos(json.records)
+    buildImageStore(json.records)
+    console.log(`files: ${json.count.files}  documents: ${json.count.photos}`)
   })
 }
 
@@ -69,15 +70,6 @@ function hasExif(record) {
   if (record.exif.gps) console.log('EXIF', record.exif.gps)
 }
 
-// const imageStoreEvents = {
-//   set: (obj, prop, value) => {
-//     if (prop === 'visible') {
-//       if (value === false) obj.el.classList.add('hide')
-//       if (value === true) obj.el.classList.remove('hide')
-//     }
-//   }
-// }
-
 function addImageToStore(record) {
   if (record.exif) hasExif(record)
   let justLabels = record.labels.map(item => item.label)
@@ -89,8 +81,8 @@ function addImageToStore(record) {
   }, {
     set: (obj, prop, value) => {
       if (prop === 'visible') {
-        if (value === false) obj.el.classList.add('hide')
-        if (value === true) obj.el.classList.remove('hide')
+        if (value === false) obj.el.classList.add('hidden')
+        if (value === true) obj.el.classList.remove('hidden')
       }
     }
   })

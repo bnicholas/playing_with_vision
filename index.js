@@ -7,7 +7,7 @@ const fetch = require('node-fetch')
 const getVisionData = require('./getVisionData.js')
 const fs = require('fs')
 const ExifImage = require('exif').ExifImage
-
+const _ = require('lodash')
 
 // Abstract all this section -----------------------------------------------
 let gfs, host
@@ -29,9 +29,20 @@ const PhotoSchema = mongoose.Schema({
   fileURL: String,
   fileContentType: String,
   labels: Array,
-  exif: mongoose.Schema.Types.Mixed
+  exif: mongoose.Schema.Types.Mixed,
+  colors: Array,
+  crop: Array
 })
 PhotoSchema.plugin(timestamps)
+
+PhotoSchema.pre('remove', async function() {
+  await deleteFileById(this.fileID)
+})
+
+PhotoSchema.post('remove', async function(photo) {
+  let count = await gfs.files.find({}).count()
+  console.log('POST remove count: ' + count)
+})
 
 const Photo = mongoose.model('Photo', PhotoSchema)
 
@@ -89,14 +100,45 @@ function getExifData(buffer) {
   })
 }
 
+function deleteFileById(fileID) {
+  return new Promise((resolve, reject) => {
+    gfs.remove({ _id: fileID, root: 'photos' }, function (err, gridStore) {
+      if (err) reject(err)
+      else resolve(true)
+    })
+  })
+}
+
+function superConsole(what) {
+  console.log("\n===========================================")
+  console.log(what)
+  console.log("===========================================\n")
+}
+
+async function removeOrphanedFiles() {
+  try {
+    let toRemove = await Photo.distinct('fileID')
+    let gridIDs = await gfs.files.distinct('_id')
+    let removeFrom = gridIDs.map(item => `${item}`)
+    let idsToDelete = _.difference(removeFrom, toRemove)
+    for (let id of idsToDelete) {
+      await deleteFileById(id)
+    }
+    return `remove ${idsToDelete.length} photo files`
+  } catch (err) {
+    return err
+  }
+}
+
 async function processUpload(gfsParams) {
   let gfsPhoto = await paramsToGridFs(gfsParams).catch(err => console.log(err))
   // let buffer = await gridFsIdToBuffer(gfsPhoto._id).catch(err => console.log(err))
   let exif = await getExifData(gfsParams.buffer).catch(err => console.log(err))
   let vision = await getVisionData(gfsParams.buffer).catch(err => console.log(err))
-  let labels = await filterLabelConfidence(vision).catch(err => console.log(err))
-  let props = { labels: labels, exif: exif }
+  let labels = await filterLabelConfidence(vision.labels).catch(err => console.log(err))
+  let props = { labels: labels, exif: exif, colors: vision.props.dominantColors.colors, crop: vision.crop.cropHints[0].boundingPoly.vertices }
   let photo = await createPhoto(props, gfsPhoto).catch(err => console.log(err))
+  // fs.writeFileSync('./visionData.json', JSON.stringify(vision))
   return photo
 }
 
@@ -137,7 +179,6 @@ function paramsToGridFs(params) {
   })
 }
 
-
 // -------------------------------------------------------------------------
 
 app.use(express.static('public'))
@@ -146,6 +187,12 @@ app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*")
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
   next()
+})
+
+app.post('/api/cleanup', (req, res) => {
+  removeOrphanedFiles()
+  .then(response => res.send(response))
+  .catch(error => res.send('seems there was not a cleanup on isle 4'))
 })
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/upload.html'))
@@ -177,20 +224,29 @@ app.get('/image/:filename', (req, res) => {
 })
 
 app.delete('/api/image/:id', (req, res) => {
-  Photo.findOne({ _id: req.params.id }, (err, doc) => {
-    gfs.files.deleteOne({ _id: doc.fileID }, err => {
-      Photo.deleteOne({ _id: req.params.id }, err => {
-        if (err) console.log('error deleting photo')
-        else res.send("WERD")
-      })
+  Photo.findById(req.params.id, function(err, doc) {
+    if (err) console.log('findById error')
+    doc.remove()
+    .then(photo => {
+      console.log('removed photo')
+      res.send('ok')
     })
+    .catch(err => {
+      console.log('error removing photo')
+      res.send('error')
+    })
+
   })
 })
 
-app.get('/api/images', (req, res) => {
+app.get('/api/images', async (req, res) => {
+  let response = { count: {} }
+  response.count.files = await gfs.files.find({}).count()
   Photo.find(function (err, records) {
     if (err) res.send(err)
-    else res.send(records)
+    response.records = records
+    response.count.photos = records.length
+    res.send(response)
   })
 })
 
