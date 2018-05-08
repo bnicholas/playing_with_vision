@@ -205,7 +205,6 @@ function generateThumbnail(imageBuffer) {
     })
   })
 }
-
 // -------------------------------------------------------------------------
 
 app.use(express.static('public'))
