@@ -71,7 +71,7 @@ function addImageHandlers() {
     el.addEventListener('click', evt => {
       evt.preventDefault()
       let id = evt.target.dataset.record
-      deleteImage(id)
+      imageStore[id].deleting = true
     })
   })
 }
@@ -90,6 +90,10 @@ function addImageToStore(record) {
     el: document.getElementById(record._id)
   }, {
     set: (obj, prop, value) => {
+      if (prop === 'deleting') {
+        obj.el.classList.add('deleting')
+        deleteImage(obj.id)
+      }
       if (prop === 'visible') {
         if (value === false) obj.el.classList.add('hidden')
         if (value === true) obj.el.classList.remove('hidden')

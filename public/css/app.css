@@ -95,6 +95,15 @@ section {
   transition: all 0.2s ease-out;
 }
 
+section.deleting {
+  opacity: .2;
+}
+
+section.deleting a.delete {
+  display: none;
+  pointer-events: none;
+}
+
 ul {
   display: inline-block;
   list-style: none;
