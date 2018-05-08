@@ -3,16 +3,16 @@ body {
   background: white;
 }
 
-h4, img, span, div {
+h4, img, span, div, p {
   opacity: 1;
-  transition: opacity 0.4s ease-out;
+  transition: opacity 0.3s ease-out;
 }
 
 h4 {
   position: relative;
 }
 
-h4 img, h4 span {
+h4 img, h4 span, p {
   opacity: 0;
 }
 
@@ -102,6 +102,26 @@ section.deleting {
 section.deleting a.delete {
   display: none;
   pointer-events: none;
+}
+
+p.labels {
+  border-top: 1px solid rgba(10,10,10,.25);
+  margin: 0;
+  text-transform: capitalize;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 1em;
+  background: #def2f8;
+  box-sizing: border-box;
+  padding: 2em;
+}
+
+section.hover p.labels {
+  opacity: 1;
 }
 
 ul {

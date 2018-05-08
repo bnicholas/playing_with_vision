@@ -52,7 +52,7 @@ function addImageElementToList(record) {
   section.push(`<section id="${record._id}" class="image">`)
   section.push(`<a href="" data-record="${record._id}" class="delete">x</a>`)
   section.push(`<img class="${classNames.join(' ')}" src="${record.thumbnailURL}" />`)
-  section.push(`<p style="display: none">${JSON.stringify(record)}</p>`)
+  section.push(`<p class="labels">${JSON.stringify(record)}</p>`)
   section.push('</section>')
   markup = section.concat(markup)
 }
@@ -70,9 +70,13 @@ function addImageHandlers() {
   deleteLinks.forEach(el => {
     el.addEventListener('click', evt => {
       evt.preventDefault()
-      let id = evt.target.dataset.record
-      imageStore[id].deleting = true
+      imageStore[evt.target.dataset.record].deleting = true
     })
+  })
+  let imageContainers = document.querySelectorAll('section.image')
+  imageContainers.forEach(el => {
+    el.addEventListener('mouseenter', evt => imageStore[evt.target.id].hover = true )
+    el.addEventListener('mouseleave', evt => imageStore[evt.target.id].hover = false )
   })
 }
 
@@ -80,24 +84,37 @@ function hasExif(record) {
   if (record.exif.gps) console.log('EXIF', record.exif.gps)
 }
 
+function toggleClassHover(el) {
+  el.children.item(2).innerHTML = imageStore[el.id].displayLabels
+  el.classList.toggle('hover')
+}
+
+function toggleClassHidden(el) {
+  el.classList.toggle('hidden')
+}
+
 function addImageToStore(record) {
   if (record.exif) hasExif(record)
   let justLabels = record.labels.map(item => item.label)
+  if (justLabels.length === 0) justLabels.push('no labels')
   imageStore[record._id] = new Proxy({
     id: record._id,
+    displayLabels: justLabels.join(' | '),
     labels: justLabels.join(' '),
     visible: true,
-    el: document.getElementById(record._id)
+    el: document.getElementById(record._id),
+    hover: false
   }, {
     set: (obj, prop, value) => {
+      if (prop === 'hover') toggleClassHover(obj.el)
       if (prop === 'deleting') {
         obj.el.classList.add('deleting')
         deleteImage(obj.id)
       }
-      if (prop === 'visible') {
-        if (value === false) obj.el.classList.add('hidden')
-        if (value === true) obj.el.classList.remove('hidden')
-      }
+      if (prop === 'visible') toggleClassHidden(obj.el)
+      // if (value === false) obj.el.classList.add('hidden')
+      // if (value === true) obj.el.classList.remove('hidden')
+
     }
   })
 }
