@@ -12,7 +12,7 @@ h4 {
   position: relative;
 }
 
-h4 img, h4 span, p {
+h4 img, h4 span {
   opacity: 0;
 }
 
@@ -105,6 +105,7 @@ section.deleting a.delete {
 }
 
 p.labels {
+  opacity: 0;
   border-top: 1px solid rgba(10,10,10,.25);
   margin: 0;
   text-transform: capitalize;
