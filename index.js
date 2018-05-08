@@ -87,18 +87,6 @@ function createPhoto(data, photo) {
   })
 }
 
-function gridFsIdToBuffer(id) {
-  return new Promise(function(resolve, reject) {
-    gfs.files.findOne({ _id: id }, (err, file) => {
-      const readstream = gfs.createReadStream(file.filename)
-      let buffer = new Buffer(0)
-      readstream.on('data', chunk => buffer = Buffer.concat([buffer, chunk]))
-      readstream.on('error', err => reject(err))
-      readstream.on('end', () => resolve(buffer))
-    })
-  })
-}
-
 function getExifData(buffer) {
   return new Promise((resolve, reject)=>{
     new ExifImage({ image : buffer }, (error, exifData) => {
@@ -140,7 +128,6 @@ async function removeOrphanedFiles() {
 
 async function processUpload(gfsParams) {
   let gfsPhoto = await paramsToGridFs(gfsParams).catch(err => console.log(err))
-  // let buffer = await gridFsIdToBuffer(gfsPhoto._id).catch(err => console.log(err))
   let exif = await getExifData(gfsParams.buffer).catch(err => console.log(err))
   let vision = await getVisionData(gfsParams.buffer).catch(err => console.log(err))
   let labels = await filterLabelConfidence(vision.labels).catch(err => console.log(err))
@@ -153,7 +140,6 @@ async function processUpload(gfsParams) {
     thumbnail: thumbnail
   }
   let photo = await createPhoto(props, gfsPhoto).catch(err => console.log(err))
-  // console.log(photo.thumbnail)
   console.log(photo.crop)
   return photo
 }
@@ -195,32 +181,15 @@ function paramsToGridFs(params) {
   })
 }
 
-function gmToBuffer (data) {
-  return new Promise((resolve, reject) => {
-    data.stream((err, stdout, stderr) => {
-      if (err) { return reject(err) }
-      const chunks = []
-      stdout.on('data', (chunk) => { chunks.push(chunk) })
-      // these are 'once' because they can and do fire multiple times for multiple errors,
-      // but this is a promise so you'll have to deal with them one at a time
-      stdout.on('end', () => { resolve(Buffer.concat(chunks)) })
-      stderr.once('data', (data) => { reject(String(data)) })
-    })
-  })
-}
-
 function generateThumbnail(imageBuffer) {
   return new Promise((resolve, reject) => {
-    gm(imageBuffer, 'image.jpg').resize(null, 200)
+    gm(imageBuffer, 'image.jpg')
+    .resize(null, 200)
     .toBuffer((err, buffer) => {
       if (err) reject(err)
       console.log(buffer)
       resolve(buffer)
     })
-    // gmToBuffer(data)
-    // .then(buffer => resolve(buffer))
-    // .catch(error => reject(error))
-
   })
 }
 // -------------------------------------------------------------------------
@@ -241,17 +210,21 @@ app.post('/api/cleanup', (req, res) => {
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/upload.html'))
 
-app.post('/api/upload', upload.single('photo'), async (req, res) => {
+app.post('/api/upload', upload.array('photo'), async (req, res) => {
   host = req.headers.host
   const imageURL = req.body.photo || req.query.url
-  if (req.file) {
-    let gridParams = {
-      content_type: req.file.mimetype,
-      filename: new Date().getTime() + req.file.originalname.slice(-4),
-      buffer: req.file.buffer
+  const uploads = []
+  if (req.files) {
+    for (let file of req.files) {
+      let gridParams = {
+        content_type: file.mimetype,
+        filename: new Date().getTime() + file.originalname.slice(-4),
+        buffer: file.buffer
+      }
+      let fromFile = await processUpload(gridParams)
+      uploads.push(fromFile)
     }
-    let fromFile = await processUpload(gridParams)
-    res.send(fromFile)
+    res.send(uploads)
   }
   if (imageURL) {
     let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.log(err))
