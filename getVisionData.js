@@ -32,7 +32,6 @@ module.exports = function(img) {
         crop: values[1][0].cropHintsAnnotation,
         props: values[1][0].imagePropertiesAnnotation
       }
-      console.log(visionData.crop)
       resolve(visionData)
     })
     .catch(error => {

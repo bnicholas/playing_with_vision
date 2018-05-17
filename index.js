@@ -43,37 +43,29 @@ PhotoSchema.pre('remove', async function() {
   await deleteFileById(this.fileID)
 })
 
-PhotoSchema.post('remove', async function(photo) {
-  let count = await gfs.files.find({}).count()
-  console.log('POST remove count: ' + count)
-})
-
 const Photo = mongoose.model('Photo', PhotoSchema)
 
 function filterLabelConfidence(list) {
   return new Promise((resolve, reject) => {
+    if (!list) reject(new Error('no array of label results was provided'))
     let minScore = 0.8
     let labelsArray = []
     list.forEach(item => {
-      if (item.score > minScore) labelsArray.push(item)
+      if (item.score > minScore) labelsArray.push(item.description)
     })
     resolve(labelsArray)
-    reject(error)
   })
 }
 
 function createPhoto(data, photo) {
   return new Promise((resolve, reject) => {
-    let labels = data.labels.map(item => {
-      let label = { label: item.description, score: item.score }
-      return label
-    })
+    if (!data.labels) reject(new Error('data.labels is not passed in'))
     const newPhoto = new Photo({
       fileID: photo._id,
       fileURL: `http://${host}/image/${photo.filename}`,
       fileName: photo.filename,
       fileContentType: photo.contentType,
-      labels: labels,
+      labels: data.labels,
       exif: data.exif,
       colors: data.colors,
       crop: data.crop,
@@ -88,7 +80,10 @@ function createPhoto(data, photo) {
 }
 
 function getExifData(buffer) {
-  return new Promise((resolve, reject)=>{
+  return new Promise((resolve, reject) => {
+    if (!buffer instanceof Buffer) {
+      reject(new Error('parameter was not a Buffer'))
+    }
     new ExifImage({ image : buffer }, (error, exifData) => {
       if (error) reject({})
       else resolve(exifData)
@@ -100,15 +95,9 @@ function deleteFileById(fileID) {
   return new Promise((resolve, reject) => {
     gfs.remove({ _id: fileID, root: 'photos' }, function (err, gridStore) {
       if (err) reject(err)
-      else resolve(true)
+      else resolve("File was deleted")
     })
   })
-}
-
-function superConsole(what) {
-  console.log("\n===========================================")
-  console.log(what)
-  console.log("===========================================\n")
 }
 
 async function removeOrphanedFiles() {
@@ -127,11 +116,13 @@ async function removeOrphanedFiles() {
 }
 
 async function processUpload(gfsParams) {
-  let gfsPhoto = await paramsToGridFs(gfsParams).catch(err => console.log(err))
-  let exif = await getExifData(gfsParams.buffer).catch(err => console.log(err))
-  let vision = await getVisionData(gfsParams.buffer).catch(err => console.log(err))
-  let labels = await filterLabelConfidence(vision.labels).catch(err => console.log(err))
-  let thumbnail = await generateThumbnail(gfsParams.buffer).catch(err => { console.log(err) })
+  if (!gfsParams.buffer) reject(new Error('gfsParams.buffer was not supplied'))
+  if (!gfsParams.buffer instanceof Buffer) reject(new Error('gfsParams.buffer is not a Buffer'))
+  let gfsPhoto = await paramsToGridFs(gfsParams).catch(err => console.error(err))
+  let exif = await getExifData(gfsParams.buffer).catch(err => '')
+  let vision = await getVisionData(gfsParams.buffer).catch(err => console.error(err))
+  let labels = await filterLabelConfidence(vision.labels).catch(err => console.error(err))
+  let thumbnail = await generateThumbnail(gfsParams.buffer).catch(err => console.error(err) )
   let props = {
     labels: labels,
     exif: exif,
@@ -139,8 +130,8 @@ async function processUpload(gfsParams) {
     crop: vision.crop.cropHints,
     thumbnail: thumbnail
   }
-  let photo = await createPhoto(props, gfsPhoto).catch(err => console.log(err))
-  console.log(photo.crop)
+  let photo = await createPhoto(props, gfsPhoto).catch(err => console.error(err))
+
   return photo
 }
 
@@ -170,6 +161,9 @@ function urlToGridFsParams(url) {
 
 function paramsToGridFs(params) {
   return new Promise((resolve, reject) => {
+    if (!params.filename || !params.content_type) {
+      reject(new Error('expected {filename: String, content_type: String}'))
+    }
     let writeStream = gfs.createWriteStream({
       filename: params.filename,
       content_type: params.content_type,
@@ -183,11 +177,11 @@ function paramsToGridFs(params) {
 
 function generateThumbnail(imageBuffer) {
   return new Promise((resolve, reject) => {
+    if (!imageBuffer instanceof Buffer) reject(new Error('parameter was not a Buffer'))
     gm(imageBuffer, 'image.jpg')
     .resize(null, 200)
     .toBuffer((err, buffer) => {
       if (err) reject(err)
-      console.log(buffer)
       resolve(buffer)
     })
   })
@@ -227,8 +221,8 @@ app.post('/api/upload', upload.array('photo'), async (req, res) => {
     res.send(uploads)
   }
   if (imageURL) {
-    let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.log(err))
-    let fromUrl = await processUpload(gridParamsFromUrl).catch(err => console.log(err))
+    let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.error(err))
+    let fromUrl = await processUpload(gridParamsFromUrl).catch(err => console.error(err))
     res.send(fromUrl)
   }
 })
@@ -266,7 +260,7 @@ app.delete('/api/image/:id', (req, res) => {
 
 app.get('/api/images', async (req, res) => {
   let response = { count: {} }
-  let count = await gfs.files.find({}).count().catch(err => { console.log(err) })
+  let count = await gfs.files.find({}).count().catch(err => console.error(err) )
   response.count.files = count
   Photo.find(function (err, records) {
     if (err) res.send(err)

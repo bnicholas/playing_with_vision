@@ -10,99 +10,90 @@ const searchElement = document.getElementById('search')
 const imageDataElement = document.getElementById('image_data')
 const uploadContainer = document.getElementById('upload_container')
 
-function fetchAllPhotos() {
-  markup = []
-  imageStore = {}
-  fetch(allImagesURL, { method: 'GET' })
-  .then(response => response.json())
-  .then(json => {
-    loadAllPhotos(json.records)
-    buildImageStore(json.records)
-    console.log(`files: ${json.count.files}  documents: ${json.count.photos}`)
+
+function addUploadIndicator() { uploadContainer.classList.add('uploading') }
+
+function removeUploadIndicator() { uploadContainer.classList.remove('uploading') }
+
+async function buildImageElementAndAppend(record) {
+  let el = await buildImageElement(record)
+  imageDataElement.appendChild(el)
+  return el
+}
+
+function buildImagesFragmentAndAppend(records) {
+  console.log(records)
+  let target = document.getElementById('append_here')
+  let doc_fragment = document.createDocumentFragment()
+  for (let record of records) {
+    buildImageElement(record)
+    .then(element => target.appendChild(element))
+    .catch(err => console.error(err))
+  }
+}
+
+function buildImageElement(record) {
+  return new Promise((resolve, reject) => {
+    if (!record) reject('no record provided to buildImageElement')
+
+    let classNames = ['thumbnail']
+    if (record.exif && record.exif.gps) classNames.push('gps')
+
+    let section = document.createElement('section')
+    section.className = 'image'
+    section.id = record._id
+    section.addEventListener('mouseenter', evt => imageStore[evt.target.id].hover = true )
+    section.addEventListener('mouseleave', evt => imageStore[evt.target.id].hover = false )
+
+    let remove = document.createElement('a')
+    remove.className = 'delete'
+    remove.setAttribute('href', '')
+    remove.setAttribute('data-record', record._id)
+    remove.innerHTML = 'x'
+    remove.addEventListener('click', evt => {
+      evt.preventDefault()
+      imageStore[evt.target.dataset.record].deleting = true
+    })
+
+    let image = document.createElement('img')
+    image.className = classNames.join(' ')
+    image.setAttribute('src', record.thumbnailURL)
+
+    let labels = document.createElement('p')
+    labels.className = 'labels'
+    labels.innerHTML = record.labels.join(' | ')
+
+    section.appendChild(image)
+    section.appendChild(remove)
+    section.appendChild(labels)
+
+    record.el = section
+    resolve(section)
   })
-}
-
-function buildImageStore(records) {
-  records.forEach(record => addImageToStore(record))
-}
-
-function addUploadIndicator() {
-  uploadContainer.classList.add('uploading')
-}
-
-function removeUploadIndicator() {
-  uploadContainer.classList.remove('uploading')
-}
-
-function loadAllPhotos(photos) {
-  photos.forEach(record => addImageElementToList(record))
-  updateHtml()
-  removeUploadIndicator()
-  addImageHandlers()
-}
-
-function updateHtml() {
-  imageDataElement.innerHTML = markup.join('\n')
-}
-
-function addImageElementToList(record) {
-  let section = []
-  let classNames = ['thumbnail']
-  if (record.exif && record.exif.gps) classNames.push('gps')
-  section.push(`<section id="${record._id}" class="image">`)
-  section.push(`<a href="" data-record="${record._id}" class="delete">x</a>`)
-  section.push(`<img class="${classNames.join(' ')}" src="${record.thumbnailURL}" />`)
-  section.push(`<p class="labels">${JSON.stringify(record)}</p>`)
-  section.push('</section>')
-  markup = section.concat(markup)
 }
 
 function deleteImage(id) {
   let url = `http://${window.location.host}/api/image/${id}`
+  let el = document.getElementById(id)
   fetch(url, {method: 'DELETE'})
   .then(response => response.text())
-  .then(text => fetchAllPhotos())
+  .then(text => imageDataElement.removeChild(el))
   .catch(error => console.log(error))
 }
 
-function addImageHandlers() {
-  let deleteLinks = document.querySelectorAll('a.delete')
-  deleteLinks.forEach(el => {
-    el.addEventListener('click', evt => {
-      evt.preventDefault()
-      imageStore[evt.target.dataset.record].deleting = true
-    })
-  })
-  let imageContainers = document.querySelectorAll('section.image')
-  imageContainers.forEach(el => {
-    el.addEventListener('mouseenter', evt => imageStore[evt.target.id].hover = true )
-    el.addEventListener('mouseleave', evt => imageStore[evt.target.id].hover = false )
-  })
-}
-
-function hasExif(record) {
-  if (record.exif.gps) console.log('EXIF', record.exif.gps)
-}
-
 function toggleClassHover(el) {
-  el.children.item(2).innerHTML = imageStore[el.id].displayLabels
+  // el.children.item(2).innerHTML = imageStore[el.id].displayLabels
   el.classList.toggle('hover')
 }
 
-function toggleClassHidden(el) {
-  el.classList.toggle('hidden')
-}
-
 function addImageToStore(record) {
-  if (record.exif) hasExif(record)
-  let justLabels = record.labels.map(item => item.label)
-  if (justLabels.length === 0) justLabels.push('no labels')
+  if (record.labels.length === 0) record.labels.push('no labels')
   imageStore[record._id] = new Proxy({
     id: record._id,
-    displayLabels: justLabels.join(' | '),
-    labels: justLabels.join(' '),
+    displayLabels: record.labels.join(' | '),
+    labels: record.labels.join(' '),
     visible: true,
-    el: document.getElementById(record._id),
+    el: record.el,
     hover: false
   }, {
     set: (obj, prop, value) => {
@@ -111,10 +102,10 @@ function addImageToStore(record) {
         obj.el.classList.add('deleting')
         deleteImage(obj.id)
       }
-      if (prop === 'visible') toggleClassHidden(obj.el)
-      // if (value === false) obj.el.classList.add('hidden')
-      // if (value === true) obj.el.classList.remove('hidden')
-
+      if (prop === 'visible') {
+        if (value === false) obj.el.classList.add('hidden')
+        if (value === true) obj.el.classList.remove('hidden')
+      }
     }
   })
 }
@@ -124,18 +115,29 @@ function fetchVisionData() {
   const form = new FormData(document.getElementById('uploader'));
   fetch(uploadURL, { method: 'POST', body: form })
   .then(response => response.json())
-  .then(json => fetchAllPhotos())
-  .then(() => formElement.reset())
+  .then(records => {
+    records.forEach(record => {
+      buildImageElementAndAppend(record)
+      .then(el => {
+        record.el = el
+        addImageToStore(record)
+      })
+      .catch(err => console.error(err))
+    })
+  })
+  .then(() => {
+    removeUploadIndicator()
+    formElement.reset()
+  })
   .catch(error => console.log('ERROR', error))
 }
 
-fileField.addEventListener('change', evt => {
-  fetchVisionData()
-})
+fileField.addEventListener('change', evt => fetchVisionData() )
 
 searchElement.addEventListener('input', evt => {
   let searchFor = evt.target.value.toLowerCase()
   for (let [key, value] of Object.entries(imageStore)) {
+    // console.log(key, value.labels)
     if (value.labels.includes(searchFor)) {
       imageStore[key].visible = true
     } else {
@@ -153,5 +155,23 @@ dragTarget.addEventListener('drop', evt => {
   fileField.files = evt.dataTransfer.files
   evt.dataTransfer.clearData()
 })
+
+function fetchAllPhotos() {
+  markup = []
+  imageStore = {}
+  fetch(allImagesURL, { method: 'GET' })
+  .then(response => response.json())
+  .then(json => {
+    json.records.forEach(record => {
+      buildImageElementAndAppend(record)
+      .then(el => {
+        record.el = el
+        addImageToStore(record)
+      })
+      .catch(err => console.error(err))
+
+    })
+  })
+}
 
 fetchAllPhotos()

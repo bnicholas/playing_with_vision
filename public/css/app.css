@@ -119,6 +119,7 @@ p.labels {
   background: #def2f8;
   box-sizing: border-box;
   padding: 2em;
+  z-index: 2;
 }
 
 section.hover p.labels {
