@@ -10,6 +10,7 @@ const ExifImage = require('exif').ExifImage
 const _difference = require('lodash/difference')
 const gm = require('gm')
 const requestIp = require('request-ip')
+const util = require('util')
 
 // Abstract all this section -----------------------------------------------
 let gfs, host
@@ -233,7 +234,7 @@ app.post('/api/sms', upload.array('photo'), async (req, res) => {
   message.push(`Click the link below to record geodata`)
   message.push(`http://ford-vision.herokuapp.com/geodata/${photo._id}`)
   console.log("===========================================")
-  console.log(`Request Body: ${req.body}`)
+  console.log(`Request Body: ${util.inspect(req.body)}`)
   console.log(`Stored Phone: ${photo.phone}`)
   console.log("===========================================")
   console.log(message.join('\n'))
