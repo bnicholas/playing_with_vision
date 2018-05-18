@@ -225,9 +225,9 @@ app.post('/api/sms', upload.array('photo'), async (req, res) => {
   host = req.headers.host
   const requestBody = req.body
   const imageURL = req.body.photo
-  const phone = req.body.phone || process.env.MY_PHONE
+  const phone = req.body.phone
   console.log("\n===========================================")
-  console.log(util.inspect(req.body))
+  console.log(req.body.phone)
   console.log("===========================================\n")
   let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.error(err))
   gridParamsFromUrl.phone = phone

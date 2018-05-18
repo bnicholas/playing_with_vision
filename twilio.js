@@ -6,7 +6,7 @@ const client = require('twilio')(accountSid, authToken)
 
 // RESPOND WITH THE PHOTO LABELS
 
-module.exports = function(photo, phone = '+17606811607') {
+module.exports = function(photo, phone) {
   return new Promise((resolve, reject) => {
     let message = []
     message.push('Photo successfully saved.')
