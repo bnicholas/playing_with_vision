@@ -6,7 +6,7 @@ const client = require('twilio')(accountSid, authToken)
 
 // RESPOND WITH THE PHOTO LABELS
 
-module.exports = function(photo) {
+module.exports = function(phone, message) {
   let labels = photo.labels.join(' , ')
   let url = `${host}/geodata/${photo._id}`
 }

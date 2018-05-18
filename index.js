@@ -221,7 +221,8 @@ app.get('/', (req, res) => res.render('upload'))
 
 app.post('/api/sms', upload.array('photo'), async (req, res) => {
   host = req.headers.host
-  const imageURL = req.body.photo || req.query.url
+  const requestBody = req.body
+  const imageURL = req.body.photo
   const phone = req.body.phone
   let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.error(err))
   gridParamsFromUrl.phone = phone
@@ -232,7 +233,8 @@ app.post('/api/sms', upload.array('photo'), async (req, res) => {
   message.push(`Click the link below to record geodata`)
   message.push(`http://ford-vision.herokuapp.com/geodata/${photo._id}`)
   console.log("===========================================")
-  console.log(`Phone: ${photo.phone}`)
+  console.log(`Request Body: ${req.body}`)
+  console.log(`Stored Phone: ${photo.phone}`)
   console.log("===========================================")
   console.log(message.join('\n'))
   console.log("===========================================")
