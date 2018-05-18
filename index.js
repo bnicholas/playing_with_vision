@@ -11,6 +11,7 @@ const _difference = require('lodash/difference')
 const gm = require('gm')
 const requestIp = require('request-ip')
 const util = require('util')
+const sendSMS = require('./twilio.js')
 
 // Abstract all this section -----------------------------------------------
 let gfs, host
@@ -224,22 +225,16 @@ app.post('/api/sms', upload.array('photo'), async (req, res) => {
   host = req.headers.host
   const requestBody = req.body
   const imageURL = req.body.photo
-  const phone = req.body.phone
+  const phone = req.body.phone || process.env.MY_PHONE
+  console.log("\n===========================================")
+  console.log(util.inspect(req.body))
+  console.log("===========================================\n")
   let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.error(err))
   gridParamsFromUrl.phone = phone
   let photo = await processUpload(gridParamsFromUrl).catch(err => console.error(err))
-  let message = []
-  message.push('Photo successfully saved.')
-  message.push(`Labels: ${photo.labels.join(' , ')}`)
-  message.push(`Click the link below to record geodata`)
-  message.push(`http://ford-vision.herokuapp.com/geodata/${photo._id}`)
-  console.log("===========================================")
-  console.log(`Request Body: ${util.inspect(req.body)}`)
-  console.log(`Stored Phone: ${photo.phone}`)
-  console.log("===========================================")
-  console.log(message.join('\n'))
-  console.log("===========================================")
-  res.send(message.join('\n'))
+  sendSMS(photo, phone)
+  .then(msg => res.send('ok'))
+  .catch(err => res.send('oops'))
 })
 
 app.post('/api/upload', upload.array('photo'), async (req, res) => {
@@ -255,6 +250,16 @@ app.post('/api/upload', upload.array('photo'), async (req, res) => {
       let fromFile = await processUpload(gridParams)
       uploads.push(fromFile)
     }
+    // sendSMS(uploads[0])
+    // .then(sid => {
+    //   console.log(`TWILIO resolved with an SID of ${sid}`)
+    //   res.send(uploads)
+    // })
+    // .catch((err) => {
+    //   console.error('error sending sms')
+    //   console.error(err)
+    //   res.send(uploads)
+    // })
     res.send(uploads)
   }
 })
