@@ -232,6 +232,8 @@ app.post('/api/sms', upload.array('photo'), async (req, res) => {
   message.push(`Click the link below to record geodata`)
   message.push(`http://ford-vision.herokuapp.com/geodata/${photo._id}`)
   console.log("===========================================")
+  console.log(`Phone: ${photo.phone}`)
+  console.log("===========================================")
   console.log(message.join('\n'))
   console.log("===========================================")
   res.send(message.join('\n'))
