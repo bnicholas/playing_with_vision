@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ford Vision - Image Uploader</title>
+    <link rel="stylesheet" href="/css/foundation.min.css">
+    <link rel="stylesheet" href="/css/app.css">
+  </head>
+
+  <body>
+    <div id="message">
+
+    </div>
+    <div class="image_container">
+      <img id="image" src="<%= photo.fileURL %>" class="image"/>
+    </div>
+
+
+    <script>
+      const photoJSON = <%- JSON.stringify(photo) %>
+    </script>
+    <script src="/geo.js" charset="utf-8"></script>
+  </body>
+</html>

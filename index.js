@@ -9,6 +9,7 @@ const fs = require('fs')
 const ExifImage = require('exif').ExifImage
 const _difference = require('lodash/difference')
 const gm = require('gm')
+const requestIp = require('request-ip')
 
 // Abstract all this section -----------------------------------------------
 let gfs, host
@@ -19,22 +20,33 @@ const multer = require('multer')
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 
+if (process.env.NODE_ENV === 'production') {
+  host = 'http://ford-vision.herokuapp.com'
+} else {
+  host = `http://localhost:${process.env.PORT}`
+}
+
 mongoose.connect(process.env.MONGODB_URI, null, error => {
   gfs = Grid(mongoose.connection.db, mongoose.mongo)
   gfs.collection('photos')
 })
-
+const Mixed = mongoose.Schema.Types.Mixed
 const PhotoSchema = mongoose.Schema({
+  phone: String,
   fileID: String,
   fileName: String,
   fileURL: String,
   fileContentType: String,
   labels: Array,
-  exif: mongoose.Schema.Types.Mixed,
+  exif: Mixed,
   colors: Array,
   crop: Array,
   thumbnail: Buffer,
-  thumbnailURL: String
+  thumbnailURL: String,
+  geo: Mixed,
+  lat: String,
+  long: String,
+  ip: String
 }, { strict: false })
 
 PhotoSchema.plugin(timestamps)
@@ -124,6 +136,7 @@ async function processUpload(gfsParams) {
   let labels = await filterLabelConfidence(vision.labels).catch(err => console.error(err))
   let thumbnail = await generateThumbnail(gfsParams.buffer).catch(err => console.error(err) )
   let props = {
+    phone: gfsParams.phone,
     labels: labels,
     exif: exif,
     colors: vision.props.dominantColors.colors,
@@ -190,11 +203,13 @@ function generateThumbnail(imageBuffer) {
 
 app.use(express.static('public'))
 app.use(bodyParser.json())
+app.use(requestIp.mw())
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*")
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
   next()
 })
+app.set('view engine', 'ejs')
 
 app.post('/api/cleanup', (req, res) => {
   removeOrphanedFiles()
@@ -202,11 +217,12 @@ app.post('/api/cleanup', (req, res) => {
   .catch(error => res.send('seems there was not a cleanup on isle 4'))
 })
 
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/upload.html'))
+app.get('/', (req, res) => res.render('upload'))
 
 app.post('/api/upload', upload.array('photo'), async (req, res) => {
   host = req.headers.host
   const imageURL = req.body.photo || req.query.url
+  const phone = req.body.phone
   const uploads = []
   if (req.files) {
     for (let file of req.files) {
@@ -222,9 +238,33 @@ app.post('/api/upload', upload.array('photo'), async (req, res) => {
   }
   if (imageURL) {
     let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.error(err))
+    if (phone) gridParamsFromUrl.phone = phone
     let fromUrl = await processUpload(gridParamsFromUrl).catch(err => console.error(err))
+    if (phone) console.log('PHONE: ' + phone)
     res.send(fromUrl)
   }
+})
+
+app.put('/api/image', (req, res) => {
+  // photo.ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+  let photo = req.body
+  console.log(photo)
+  Photo.findById(photo._id, function (err, record) {
+    if (err) res.send(err)
+    // record.ip = photo.ip
+    record.geo = photo.geo
+    record.save((err, record) => {
+      if (err) res.send(err)
+      else res.send(record)
+    })
+  })
+})
+
+app.get('/geodata/:photo_id', (req, res) => {
+  Photo.findById(req.params.photo_id, function (err, record) {
+    if (err) res.send(err)
+    res.render('geo', {photo: record})
+  })
 })
 
 app.get('/image/:filename', (req, res) => {
@@ -271,6 +311,7 @@ app.get('/api/images', async (req, res) => {
 })
 
 app.listen(process.env.PORT || 5000, () => {
+  console.log(process.env)
   console.log(`Ford Vision is listening on ${process.env.PORT || 5000}`)
   console.log(`NODE VERSION: ${process.version}`)
 })
