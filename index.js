@@ -219,10 +219,23 @@ app.post('/api/cleanup', (req, res) => {
 
 app.get('/', (req, res) => res.render('upload'))
 
-app.post('/api/upload', upload.array('photo'), async (req, res) => {
+app.post('/api/sms', upload.array('photo'), async (req, res) => {
   host = req.headers.host
   const imageURL = req.body.photo || req.query.url
   const phone = req.body.phone
+  let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.error(err))
+  gridParamsFromUrl.phone = phone
+  let photo = await processUpload(gridParamsFromUrl).catch(err => console.error(err))
+  let message = []
+  message.push('Photo successfully saved.')
+  message.push(`Labels: ${photo.labels.join(' , ')}`)
+  message.push(`Click the link below to record geodata`)
+  message.push(`http://ford-vision.herokuapp.com/geodata/${photo._id}`)
+  res.send(message.join('\n'))
+})
+
+app.post('/api/upload', upload.array('photo'), async (req, res) => {
+  host = req.headers.host
   const uploads = []
   if (req.files) {
     for (let file of req.files) {
@@ -235,13 +248,6 @@ app.post('/api/upload', upload.array('photo'), async (req, res) => {
       uploads.push(fromFile)
     }
     res.send(uploads)
-  }
-  if (imageURL) {
-    let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.error(err))
-    if (phone) gridParamsFromUrl.phone = phone
-    let fromUrl = await processUpload(gridParamsFromUrl).catch(err => console.error(err))
-    if (phone) console.log('PHONE: ' + phone)
-    res.send(fromUrl)
   }
 })
 
@@ -311,7 +317,6 @@ app.get('/api/images', async (req, res) => {
 })
 
 app.listen(process.env.PORT || 5000, () => {
-  console.log(process.env)
   console.log(`Ford Vision is listening on ${process.env.PORT || 5000}`)
   console.log(`NODE VERSION: ${process.version}`)
 })
