@@ -39,22 +39,32 @@ const PhotoSchema = mongoose.Schema({
   fileName: String,
   fileURL: String,
   fileContentType: String,
-  labels: Array,
+  labels_raw: Array,
   exif: Mixed,
   colors: Array,
   crop: Array,
   thumbnail: Buffer,
   thumbnailURL: String,
   geo: Mixed,
-  lat: String,
-  long: String,
   ip: String
-}, { strict: false })
+}, {
+  strict: false,
+  toObject: { virtuals: true },
+  toJSON: { virtuals: true }
+})
 
 PhotoSchema.plugin(timestamps)
 
 PhotoSchema.pre('remove', async function() {
   await deleteFileById(this.fileID)
+})
+
+PhotoSchema.virtual('labels').get(function() {
+  return this.labels_raw.map(item => item.description)
+})
+
+PhotoSchema.virtual('scores').get(function() {
+  return this.labels_raw.map(item => `${item.description} ${(item.score * 100).toFixed(1) + '%'}`)
 })
 
 const Photo = mongoose.model('Photo', PhotoSchema)
@@ -65,7 +75,7 @@ function filterLabelConfidence(list) {
     let minScore = 0.8
     let labelsArray = []
     list.forEach(item => {
-      if (item.score > minScore) labelsArray.push(item.description)
+      if (item.score > minScore) labelsArray.push(item)
     })
     resolve(labelsArray)
   })
@@ -73,19 +83,21 @@ function filterLabelConfidence(list) {
 
 function createPhoto(data, photo) {
   return new Promise((resolve, reject) => {
-    if (!data.labels) reject(new Error('data.labels is not passed in'))
+    if (!data.labels_raw) reject(new Error('data.labels is not passed in'))
     const newPhoto = new Photo({
       fileID: photo._id,
       fileURL: `http://${host}/image/${photo.filename}`,
       fileName: photo.filename,
       fileContentType: photo.contentType,
-      labels: data.labels,
+      labels_raw: data.labels_raw,
       exif: data.exif,
       colors: data.colors,
       crop: data.crop,
       thumbnail: data.thumbnail
     })
     newPhoto.set({ thumbnailURL: `http://${host}/thumbnail/${newPhoto._id}` })
+    newPhoto.set({ labels: newPhoto.labels })
+    newPhoto.set({ scores: newPhoto.scores })
     newPhoto.save((err, doc) => {
       if (!err) resolve(doc)
       else reject(err)
@@ -139,7 +151,7 @@ async function processUpload(gfsParams) {
   let thumbnail = await generateThumbnail(gfsParams.buffer).catch(err => console.error(err) )
   let props = {
     phone: gfsParams.phone,
-    labels: labels,
+    labels_raw: labels,
     exif: exif,
     colors: vision.props.dominantColors.colors,
     crop: vision.crop.cropHints,
@@ -213,7 +225,7 @@ app.use(function(req, res, next) {
 })
 app.set('view engine', 'ejs')
 
-app.post('/api/cleanup', (req, res) => {
+app.get('/api/cleanup', (req, res) => {
   removeOrphanedFiles()
   .then(response => res.send(response))
   .catch(error => res.send('seems there was not a cleanup on isle 4'))
@@ -245,16 +257,6 @@ app.post('/api/upload', upload.array('photo'), async (req, res) => {
       let fromFile = await processUpload(gridParams)
       uploads.push(fromFile)
     }
-    // sendSMS(uploads[0])
-    // .then(sid => {
-    //   console.log(`TWILIO resolved with an SID of ${sid}`)
-    //   res.send(uploads)
-    // })
-    // .catch((err) => {
-    //   console.error('error sending sms')
-    //   console.error(err)
-    //   res.send(uploads)
-    // })
     res.send(uploads)
   }
 })
@@ -321,6 +323,7 @@ app.get('/api/images', async (req, res) => {
     if (err) res.send(err)
     response.records = records
     response.count.photos = records.length
+    console.log(records[1].scores)
     res.send(response)
   })
 })

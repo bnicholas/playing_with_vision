@@ -33,6 +33,7 @@ function buildImagesFragmentAndAppend(records) {
 }
 
 function buildImageElement(record) {
+  console.log(record)
   return new Promise((resolve, reject) => {
     if (!record) reject('no record provided to buildImageElement')
 
@@ -60,8 +61,10 @@ function buildImageElement(record) {
     image.setAttribute('src', record.thumbnailURL)
 
     let labels = document.createElement('p')
+    let scored = record.scores
     labels.className = 'labels'
-    labels.innerHTML = record.labels.join(' | ')
+    labels.innerHTML = record.scores.join(' | ')
+
 
     section.appendChild(image)
     section.appendChild(remove)
@@ -90,7 +93,7 @@ function addImageToStore(record) {
   if (record.labels.length === 0) record.labels.push('no labels')
   imageStore[record._id] = new Proxy({
     id: record._id,
-    displayLabels: record.labels.join(' | '),
+    displayLabels: record.scores.join(' | '),
     labels: record.labels.join(' '),
     visible: true,
     el: record.el,
