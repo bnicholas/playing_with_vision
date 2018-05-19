@@ -9,9 +9,6 @@ const client = require('twilio')(accountSid, authToken)
 module.exports = function(photo, phone) {
   return new Promise((resolve, reject) => {
     let message = []
-    let labels = photo.label_ratings.map(label => {
-      `${label.name} ${(label.score * 100).toFixed(2) + '%'}`
-    })
     message.push('Photo successfully saved.')
     message.push(`Labels: ${photo.score.join('\n')}`)
     message.push(`Click the link below to record geodata`)

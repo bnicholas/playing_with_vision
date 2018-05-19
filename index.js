@@ -321,10 +321,13 @@ app.get('/api/images', async (req, res) => {
   response.count.files = count
   Photo.find(function (err, records) {
     if (err) res.send(err)
-    response.records = records
-    response.count.photos = records.length
-    console.log(records[1].scores)
-    res.send(response)
+    if (records.length === 0) res.send([])
+    else {
+      response.records = records
+      response.count.photos = records.length
+      console.log(records[1].scores)
+      res.send(response)
+    }
   })
 })
 
