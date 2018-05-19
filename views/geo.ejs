@@ -4,6 +4,15 @@
     <title>Ford Vision - Image Uploader</title>
     <link rel="stylesheet" href="/css/foundation.min.css">
     <link rel="stylesheet" href="/css/app.css">
+    <style>
+      body: {
+        margin: 0;
+      }
+      #map { height: 50vh; width: auto; overflow: auto; }
+      .image_container { height: 50vh; text-align: center; }
+      .image_container img { max-height: 100%; }
+    </style>
+
   </head>
 
   <body>
@@ -13,11 +22,14 @@
     <div class="image_container">
       <img id="image" src="<%= photo.fileURL %>" class="image"/>
     </div>
+    <div id="map"> </div>
 
 
     <script>
       const photoJSON = <%- JSON.stringify(photo) %>
+      console.log('photoJSON', photoJSON)
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBcj2TtCDuC1BGnpWWuR4TiyGMVB-7fOd0"></script>
     <script src="/geo.js" charset="utf-8"></script>
   </body>
 </html>

@@ -222,13 +222,8 @@ app.post('/api/cleanup', (req, res) => {
 app.get('/', (req, res) => res.render('upload'))
 
 app.post('/api/sms', upload.array('photo'), async (req, res) => {
-  host = req.headers.host
-  const requestBody = req.body
   const imageURL = req.body.photo
   const phone = req.body.phone
-  console.log("\n===========================================")
-  console.log(req.body.phone)
-  console.log("===========================================\n")
   let gridParamsFromUrl = await urlToGridFsParams(imageURL).catch(err => console.error(err))
   gridParamsFromUrl.phone = phone
   let photo = await processUpload(gridParamsFromUrl).catch(err => console.error(err))
@@ -282,6 +277,7 @@ app.put('/api/image', (req, res) => {
 app.get('/geodata/:photo_id', (req, res) => {
   Photo.findById(req.params.photo_id, function (err, record) {
     if (err) res.send(err)
+    console.log(record)
     res.render('geo', {photo: record})
   })
 })

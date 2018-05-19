@@ -19,6 +19,10 @@ function updatePhotoData(photo) {
   })
 }
 
+function initMap() {
+  console.log('Dont init quite yet')
+}
+
 function getGeoLocation() {
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(position => {
@@ -34,6 +38,14 @@ function getGeoLocation() {
           speed: position.coords.speed,
         }
       }
+
+      // console.log(updated_photo.geo)
+
+      const location = {lat: updated_photo.geo.latitude, lng: updated_photo.geo.longitude}
+      const mapOpts = { center: location, zoom: 20 }
+      const map = new google.maps.Map(document.getElementById('map'), mapOpts)
+      const marker = new google.maps.Marker({ position: location, map: map })
+
       updatePhotoData(updated_photo)
       .then(data => {
         console.log(data)
