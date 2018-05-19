@@ -158,7 +158,7 @@ async function processUpload(gfsParams) {
     thumbnail: thumbnail
   }
   let photo = await createPhoto(props, gfsPhoto).catch(err => console.error(err))
-
+  // sendSMS(photo, process.env.MY_PHONE)
   return photo
 }
 

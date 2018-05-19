@@ -10,7 +10,7 @@ module.exports = function(photo, phone) {
   return new Promise((resolve, reject) => {
     let message = []
     message.push('Photo successfully saved.')
-    message.push(`Labels: ${photo.score.join('\n')}`)
+    message.push(`Labels: ${photo.scores.join('\n')}`)
     message.push(`Click the link below to record geodata`)
     message.push(`http://ford-vision.herokuapp.com/geodata/${photo._id}`)
     let send = message.join('\n')
@@ -26,7 +26,7 @@ module.exports = function(photo, phone) {
        to: phone
      })
     .then(response => {
-      console.log(send)
+      // console.log(send)
       resolve(response.sid)
     })
     .done()
