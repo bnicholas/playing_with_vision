@@ -18,6 +18,10 @@ module.exports = function(photo, phone) {
     message.push(`http://ford-vision.herokuapp.com/geodata/${photo._id}`)
     let send = message.join('\n')
 
+    console.log("=================SMS=======================")
+    console.log(send)
+    console.log("===========================================")
+
     client.messages
     .create({
        body: send,
