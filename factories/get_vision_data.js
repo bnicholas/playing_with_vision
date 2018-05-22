@@ -8,7 +8,7 @@ const fileData = JSON.stringify({
   private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
   client_email: process.env.GOOGLE_CLIENT_EMAIL
 })
-fs.writeFileSync(__dirname + '/ford-vision.json', fileData, {encoding:'utf8'})
+fs.writeFileSync('ford-vision.json', fileData, {encoding:'utf8'})
 // --------------------------------------------------------------------------------
 
 const vision = require('@google-cloud/vision')
@@ -17,6 +17,7 @@ const cropOptions = { imageContext: { cropHintsParams: { aspectRatios : [1.77, 1
 
 // GIVE IT AN IMAGE BUFFER AND IT RESOLVES WITH GOOGLE DATA
 module.exports = function(buffer) {
+  console.log('__dirname', __dirname)
   return new Promise(function(resolve, reject) {
     const labels = client.labelDetection(buffer)
     const props = client.imageProperties(buffer, cropOptions)
