@@ -48,22 +48,26 @@ app.on('ready', function() {
         let fromFile = await processUpload(params).catch(err => console.error(err))
         uploads.push(fromFile)
       }
+      let photo = uploads[0]
       res.send(uploads)
     } else {
       res.send('No files provided')
     }
   })
 
-  const sendSMS = require('./factories/send_sms')
+
   const processUpload = require('./factories/process_upload')
   const urlToGridFsParams = require('./factories/params_to_gridfs')
+  const sms = require('./factories/send_sms')
 
   app.post('/api/sms', upload.array('photo'), async (req, res) => {
     const imageURL = req.body.photo
     const params = await urlToGridFsParams(imageURL).catch(err => console.error(err))
     params.phone = req.body.phone
     let photo = await processUpload(params).catch(err => console.error(err))
-    sendSMS(photo, req.body.phone)
+    let saved = await sms.saved(photo, req.body.phone).catch(err => console.error(err))
+    let labels = await sms.labels(photo, req.body.phone).catch(err => console.error(err))
+    let geo = await sms.geolink(photo, req.body.phone).catch(err => console.error(err))
     .then(msg => res.send('ok'))
     .catch(err => res.send('oops'))
   })
