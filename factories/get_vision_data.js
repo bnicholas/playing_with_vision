@@ -1,4 +1,5 @@
-(require('dotenv').config({ silent: process.env.NODE_ENV === 'production' }))
+// get_vision_data.js
+// (require('dotenv').config({ silent: process.env.NODE_ENV === 'production' }))
 
 const fs = require('fs')
 
@@ -12,19 +13,13 @@ fs.writeFileSync(__dirname + '/ford-vision.json', fileData, {encoding:'utf8'})
 
 const vision = require('@google-cloud/vision')
 const client = new vision.ImageAnnotatorClient()
+const cropOptions = { imageContext: { cropHintsParams: { aspectRatios : [1.77, 1.333] } } }
 
-const cropOptions = {
-  imageContext: {
-    cropHintsParams: {
-      aspectRatios : [1.77, 1.333]
-    }
-  }
-}
-
-module.exports = function(img) {
+// GIVE IT AN IMAGE BUFFER AND IT RESOLVES WITH GOOGLE DATA
+module.exports = function(buffer) {
   return new Promise(function(resolve, reject) {
-    const labels = client.labelDetection(img)
-    const props = client.imageProperties(img, cropOptions)
+    const labels = client.labelDetection(buffer)
+    const props = client.imageProperties(buffer, cropOptions)
     Promise.all([labels, props])
     .then(values => {
       const visionData = {

@@ -2,10 +2,8 @@ const accountSid = process.env.TWILIO_SID
 const authToken = process.env.TWILIO_TOKEN
 const client = require('twilio')(accountSid, authToken)
 
-// SEND A GEO URL TO VISIT
-
-// RESPOND WITH THE PHOTO LABELS
-
+// GIVE IT A PHOTO RECORD AND A PHONE NUMBER
+// AND IT WILL SEND A FORMATED SMS MESSAGE
 module.exports = function(photo, phone) {
   return new Promise((resolve, reject) => {
     let message = []
