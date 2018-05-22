@@ -17,7 +17,6 @@ module.exports = function(params) {
     const stream = bufferToStream(params.buffer)
     Attachment.write(details, stream, (error, attachment) => {
       if (error) reject(error)
-      console.log('Attachment Saved', attachment)
       resolve(attachment)
     })
   })

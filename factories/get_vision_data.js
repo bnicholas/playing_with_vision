@@ -17,7 +17,6 @@ const cropOptions = { imageContext: { cropHintsParams: { aspectRatios : [1.77, 1
 
 // GIVE IT AN IMAGE BUFFER AND IT RESOLVES WITH GOOGLE DATA
 module.exports = function(buffer) {
-  console.log('__dirname', __dirname)
   return new Promise(function(resolve, reject) {
     const labels = client.labelDetection(buffer)
     const props = client.imageProperties(buffer, cropOptions)

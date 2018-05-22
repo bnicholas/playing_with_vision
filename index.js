@@ -42,7 +42,6 @@ app.on('ready', function() {
     const uploads = []
     if (req.files) {
       for (let params of req.files) {
-        console.log(params)
         params.host = app.get('host')
         params.filename = new Date().getTime() + params.originalname.slice(-4)
         params.content_type = params.mimetype
