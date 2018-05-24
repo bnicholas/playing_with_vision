@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const timestamps = require('mongoose-timestamp')
-const deleteAttachment = require('../factories/delete_attachment_by_id')
+const deleteAttachment = require('../modules/delete_attachment_by_id')
 
 const Mixed = mongoose.Schema.Types.Mixed
 const PhotoSchema = mongoose.Schema({
@@ -14,8 +14,9 @@ const PhotoSchema = mongoose.Schema({
   colors: Array,
   crop: Array,
   thumbnail: Buffer,
-  // thumbnailURL: String,
-  geo: Mixed,
+  browserGeo: {type: Mixed, default: false },
+  exifGeo: {type: Mixed, default: false },
+  ipGeo: {type: Mixed, default: false },
   ip: String
 }, {
   strict: false,

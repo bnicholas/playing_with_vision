@@ -6,6 +6,7 @@ const mongoose = require('mongoose')
 
 const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
+const responseTime = require('response-time')
 
 process.on('unhandledRejection', (reason, p) => {
   console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -14,7 +15,7 @@ process.on('unhandledRejection', (reason, p) => {
 
 app.use(express.static('public'))
 app.use(bodyParser.json())
-app.use(requestIp.mw())
+app.use(responseTime())
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*")
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
@@ -26,7 +27,10 @@ app.on('ready', function() {
 
   console.log('APP ready')
 
-  const removeOrphanedAttachments = require('./factories/remove_orphaned_attachments')
+  const public_ip = require('./modules/get_public_ip')
+  const ip_location = require('./modules/get_ip_location')
+
+  const removeOrphanedAttachments = require('./modules/remove_orphaned_attachments')
 
   app.get('/api/cleanup', (req, res) => {
     removeOrphanedAttachments()
@@ -41,14 +45,17 @@ app.on('ready', function() {
   app.post('/api/upload', upload.array('photo'), async (req, res) => {
     const uploads = []
     if (req.files) {
+      let ip = await public_ip(req)
+      let ipGeo = await ip_location(ip)
       for (let params of req.files) {
         params.host = app.get('host')
         params.filename = new Date().getTime() + params.originalname.slice(-4)
         params.content_type = params.mimetype
+        params.ip = ip
+        params.ipGeo = ipGeo
         let fromFile = await processUpload(params).catch(err => console.error(err))
         uploads.push(fromFile)
       }
-      let photo = uploads[0]
       res.send(uploads)
     } else {
       res.send('No files provided')
@@ -56,9 +63,9 @@ app.on('ready', function() {
   })
 
 
-  const processUpload = require('./factories/process_upload')
-  const urlToGridFsParams = require('./factories/params_to_gridfs')
-  const sms = require('./factories/send_sms')
+  const processUpload = require('./modules/process_upload')
+  const urlToGridFsParams = require('./modules/params_to_gridfs')
+  const sms = require('./modules/send_sms')
 
   app.post('/api/sms', upload.array('photo'), async (req, res) => {
     const imageURL = req.body.photo
@@ -75,33 +82,36 @@ app.on('ready', function() {
   const Photo = require('./models/photo')
   const Attachment = require('./models/attachment')
 
-  app.put('/api/image', (req, res) => {
-    // photo.ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-    let photo = req.body
-    console.log(photo)
-    Photo.findById(photo._id, function (err, record) {
-      if (err) res.send(err)
-      // record.ip = photo.ip
-      record.geo = photo.geo
-      record.save((err, record) => {
-        if (err) res.send(err)
-        else res.send(record)
-      })
-    })
+  app.put('/api/image', async (req, res) => {
+    if (!req.body._id) res.send('no id was provided')
+    let record = await Photo.findById(req.body._id).exec()
+    record.browserGeo = req.body.browserGeo || false
+    let saved = await record.save()
+    if (saved) res.send(saved)
+    else res.send(new Error('record was not saved'))
   })
 
-  app.get('/geodata/:photo_id', (req, res) => {
-    Photo.findById(req.params.photo_id, function (err, record) {
-      if (err) res.send(err)
-      console.log(record)
-      res.render('geo', {photo: record})
+  app.get('/geodata/:photo_id', async function(req, res) {
+    let record = await Photo.findById(req.params.photo_id).exec().catch(err => console.error(err))
+    let ip = await public_ip(req).catch(err => console.error(err))
+    if (!record.ipGeo) {
+      record.ipGeo = await ip_location(ip).catch(err => console.error(err))
+    }
+    let locals = {photo: record}
+    res.once('finish', () => {
+      // THIS IS JUST TO CHECK THE GEOIP LAG
+      console.log('RENDERED in ' + res.get('X-Response-Time'))
+      record.save()
+      // .then(saved => console.log("SAVED"))
+      // .catch(error => console.log("NOT SAVED", error))
     })
+    res.render('geo', locals)
   })
 
   app.get('/image/:filename', (req, res) => {
-    Attachment.files.findOne({ filename: req.params.filename }, (err, file) => {
-      const readstream = Attachment.createReadStream(file.filename)
-      readstream.pipe(res)
+    Attachment.findOne({ filename: req.params.filename }, (err, file) => {
+      const readStream = Attachment.readById(file._id)
+      readStream.pipe(res)
     })
   })
 
@@ -136,15 +146,16 @@ app.on('ready', function() {
       if (records.length === 0) res.send([])
       else {
         response.records = records
-
         res.send(response)
       }
     })
   })
 
-  app.get('/', (req, res) => res.render('upload'))
+  app.get('/', (req, res) => {
+    res.render('upload')
+  })
 
-  app.listen(process.env.PORT || 5000, () => {
+  app.listen(process.env.PORT || 5000, '0.0.0.0', () => {
     console.log(`Ford Vision is listening on ${process.env.PORT || 5000}`)
     console.log(`NODE VERSION: ${process.version}`)
   })
@@ -152,6 +163,7 @@ app.on('ready', function() {
 })
 
 mongoose.connect(process.env.MONGODB_URI)
+mongoose.Promise = global.Promise
 mongoose.connection.once('open', function() {
   console.log('Mongoose Connected')
   app.emit('ready')

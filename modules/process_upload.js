@@ -5,6 +5,7 @@ const getVisionData = require('./get_vision_data')
 const filterLabelConfidence = require('./label_confidence')
 const processThumbnail = require('./process_thumbnail')
 const createPhoto = require('./create_photo')
+const gpsToCoords = require('./exif_to_coords')
 
 module.exports = async function(params) {
   if (!params.buffer) reject(new Error('params.buffer was not supplied'))
@@ -23,7 +24,14 @@ module.exports = async function(params) {
     crop: vision.crop.cropHints,
     thumbnail: thumbnail
   }
+  if (exif.gps) {
+    console.log('if exif.gps')
+    let coords = gpsToCoords(exif.gps)
+    props.exifGeo = coords
+    console.log('coords')
+  }
   // console.log('thumbnail', thumbnail)
+  console.log('props.exifGeo', props.exifGeo)
   let photo = await createPhoto(props, gfsPhoto).catch(err => console.error(err))
   // sendSMS(photo, process.env.MY_PHONE)
   return photo

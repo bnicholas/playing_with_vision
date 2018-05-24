@@ -1,8 +1,60 @@
-let img = document.getElementById('image')
+const request_url = window.location.origin + '/api/image'
+const message = document.getElementById('message')
 const photo = photoJSON
-let url = window.location.origin + '/api/image'
-let message = document.getElementById('message')
-let geo
+const ipGeo = photo.ipGeo
+const browserGeo = photo.browserGeo
+const exifGeo = photo.exifGeo
+
+var geoCoords
+
+console.log('browserGeo', browserGeo)
+console.log('ipGeo', ipGeo)
+console.log('exifGeo', exifGeo)
+
+if (ipGeo) {
+  geoCoords = ipGeo
+  message.innerHTML = "Location from web browser location"
+}
+if (browserGeo) {
+  geoCoords = browserGeo
+  message.innerHTML = "Location from web browser location"
+}
+if (exifGeo) {
+  geoCoords = exifGeo
+  message.innerHTML = "Location from photo metadata"
+}
+
+console.log(geoCoords)
+
+const map = new google.maps.Map(document.getElementById('map'), { center: geoCoords, zoom: 10 })
+const marker = new google.maps.Marker({ map: map, position: geoCoords })
+
+// map.setCenter(geoCoords)
+// marker.setPosition(geoCoords)
+
+if (!exifGeo && !browserGeo && "geolocation" in navigator) {
+  console.log('NOOOOO')
+  navigator.geolocation.getCurrentPosition(pos => {
+    const updated = {
+      _id: photo._id,
+      browserGeo: {lat: pos.coords.latitude, lng: pos.coords.longitude}
+    }
+    const newGeoCoords = updated.browserGeo
+
+    map.panTo(newGeoCoords)
+    marker.setPosition(newGeoCoords)
+
+    updatePhotoData(updated)
+    .then(data => {
+      console.log(data)
+      message.innerHTML = "Location from web browser location"
+    })
+    .catch(err => {
+      console.error(err)
+      message.innerHTML = "We had trouble tracking your location"
+    })
+  })
+}
 
 function updatePhotoData(photo) {
   let opts = {
@@ -11,54 +63,10 @@ function updatePhotoData(photo) {
     headers: { 'content-type': 'application/json' }
   }
   return new Promise((resolve, reject) => {
-    const req = new Request(url, opts)
+    const req = new Request(request_url, opts)
     fetch(req)
     .then(response => response.json())
     .then(record => resolve(record))
     .catch(err => reject(err))
   })
 }
-
-function initMap() {
-  console.log('Dont init quite yet')
-}
-
-function getGeoLocation() {
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(position => {
-      const updated_photo = {
-        _id: photo._id,
-        geo: {
-          accuracy: position.coords.accuracy,
-          altitude: position.coords.altitude,
-          altitudeAccuracy: position.coords.altitudeAccuracy,
-          heading: position.coords.heading,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          speed: position.coords.speed,
-        }
-      }
-
-      // console.log(updated_photo.geo)
-
-      const location = {lat: updated_photo.geo.latitude, lng: updated_photo.geo.longitude}
-      const mapOpts = { center: location, zoom: 20 }
-      const map = new google.maps.Map(document.getElementById('map'), mapOpts)
-      const marker = new google.maps.Marker({ position: location, map: map })
-
-      updatePhotoData(updated_photo)
-      .then(data => {
-        console.log(data)
-        message.innerHTML = "We successfully tracked your location"
-      })
-      .catch(err => {
-        console.error(err)
-        message.innerHTML = "We had trouble tracking your location"
-      })
-    })
-  } else {
-    message.innerHTML = "Enable Location in your browser"
-  }
-}
-
-getGeoLocation()

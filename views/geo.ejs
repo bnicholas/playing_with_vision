@@ -3,31 +3,60 @@
   <head>
     <title>Ford Vision - Image Uploader</title>
     <link rel="stylesheet" href="/css/foundation.min.css">
-    <link rel="stylesheet" href="/css/app.css">
     <style>
       body: {
         margin: 0;
+        padding: 0;
       }
-      #map { height: 50vh; width: auto; overflow: auto; }
-      .image_container { height: 50vh; text-align: center; }
-      .image_container img { max-height: 100%; }
+      #map {
+        height: calc(100vh - 80px);
+        width: 100vw;
+        overflow: auto;
+      }
+      #message {
+        position: fixed;
+        bottom: 0;
+        width: 100vw;
+        height: 80px;
+        line-height: 80px;
+        text-align: center;
+        border-top: 1px solid rgba(10,10,10,.25);
+        background: #def2f8;
+        box-sizing: border-box;
+        z-index: 9999;
+      }
+      .image {
+        height: 10vh;
+        min-height: 120px;
+        width: auto;
+        position: fixed;
+        bottom: 115px;
+        left: 10px;
+        z-index: 9999;
+        border: 5px solid #fff;
+        box-shadow: 1px 1px 3px rgba(0,0,0,.4);
+      }
+      .image img {
+        height: 100%;
+        width: auto;
+      }
+
     </style>
 
   </head>
 
   <body>
-    <div id="message">
+    <div id="message"> Please hold while we find your location </div>
 
+    <div class="image">
+      <img id="image" src="<%= photo.fileURL %>" />
     </div>
-    <div class="image_container">
-      <img id="image" src="<%= photo.fileURL %>" class="image"/>
-    </div>
+
     <div id="map"> </div>
 
 
     <script>
       const photoJSON = <%- JSON.stringify(photo) %>
-      console.log('photoJSON', photoJSON)
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBcj2TtCDuC1BGnpWWuR4TiyGMVB-7fOd0"></script>
     <script src="/geo.js" charset="utf-8"></script>

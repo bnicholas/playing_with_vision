@@ -1,6 +1,7 @@
 // create_photo.js
 
 const Photo = require('../models/photo')
+const gpsCoords = require('./exif_to_coords')
 
 module.exports = function(props, photo) {
   return new Promise((resolve, reject) => {
@@ -12,6 +13,7 @@ module.exports = function(props, photo) {
       fileContentType: photo.contentType,
       labels_raw: props.labels_raw,
       exif: props.exif,
+      exifGeo: props.exifGeo,
       colors: props.colors,
       crop: props.crop,
       thumbnail: props.thumbnail
