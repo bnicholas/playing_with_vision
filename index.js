@@ -64,19 +64,19 @@ app.on('ready', function() {
 
 
   const processUpload = require('./modules/process_upload')
-  const urlToGridFsParams = require('./modules/params_to_gridfs')
+  const urlToGridFsParams = require('./modules/url_to_gridfs_params')
   const sms = require('./modules/send_sms')
 
-  app.post('/api/sms', upload.array('photo'), async (req, res) => {
+  app.post('/api/sms', async (req, res) => {
     const imageURL = req.body.photo
+    const phone = req.body.phone
     const params = await urlToGridFsParams(imageURL).catch(err => console.error(err))
     params.phone = req.body.phone
     let photo = await processUpload(params).catch(err => console.error(err))
     let saved = await sms.saved(photo, req.body.phone).catch(err => console.error(err))
     let labels = await sms.labels(photo, req.body.phone).catch(err => console.error(err))
     let geo = await sms.geolink(photo, req.body.phone).catch(err => console.error(err))
-    .then(msg => res.send('ok'))
-    .catch(err => res.send('oops'))
+    res.send(photo)
   })
 
   const Photo = require('./models/photo')

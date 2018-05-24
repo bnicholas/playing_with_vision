@@ -24,7 +24,7 @@ module.exports = async function(params) {
     crop: vision.crop.cropHints,
     thumbnail: thumbnail
   }
-  if (exif.gps) {
+  if (exif && exif.gps) {
     console.log('if exif.gps')
     let coords = gpsToCoords(exif.gps)
     props.exifGeo = coords

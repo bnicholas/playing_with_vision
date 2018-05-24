@@ -8,9 +8,11 @@ module.exports = function(url) {
     .then(res => {
       let chunks = []
       let ext = '.jpg'
-      if (res.headers.get('Content-Type') === 'image/jpeg') ext = '.jpg'
+      let content_type = res.headers.get('Content-Type')
+      console.log('content_type', content_type)
+      if (content_type === 'image/jpeg') ext = '.jpg'
       const gridParams = {
-        content_type: res.headers.get('Content-Type'),
+        content_type: content_type,
         filename: new Date().getTime() + ext,
         buffer: ''
       }
