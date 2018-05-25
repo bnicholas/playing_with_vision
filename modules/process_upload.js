@@ -1,8 +1,8 @@
 // process_upload.js
-const paramsToGridFs = require('./params_to_gridfs')
+const createAttachment = require('./create_attachment')
 const getExifData = require('./get_exif_data')
 const getVisionData = require('./get_vision_data')
-const filterLabelConfidence = require('./label_confidence')
+const filterLabelConfidence = require('./filter_label_confidence')
 const processThumbnail = require('./process_thumbnail')
 const createPhoto = require('./create_photo')
 const gpsToCoords = require('./exif_to_coords')
@@ -10,12 +10,11 @@ const gpsToCoords = require('./exif_to_coords')
 module.exports = async function(params) {
   if (!params.buffer) reject(new Error('params.buffer was not supplied'))
   if (!params.buffer instanceof Buffer) reject(new Error('params.buffer is not a Buffer'))
-  // let file = await Attachment.create(params)
-  let gfsPhoto = await paramsToGridFs(params).catch(err => console.error(err))
-  let exif = await getExifData(params.buffer).catch(err => console.error(err))
-  let vision = await getVisionData(params.buffer).catch(err => console.error(err))
-  let labels = await filterLabelConfidence(vision.labels).catch(err => console.error(err))
-  let thumbnail = await processThumbnail(params.buffer).catch(err => console.error(err) )
+  let attachment = await createAttachment(params)
+  let exif = await getExifData(params.buffer)
+  let vision = await getVisionData(params.buffer)
+  let labels = await filterLabelConfidence(vision.labels)
+  let thumbnail = await processThumbnail(params.buffer)
   let props = {
     phone: params.phone,
     labels_raw: labels,
@@ -25,14 +24,10 @@ module.exports = async function(params) {
     thumbnail: thumbnail
   }
   if (exif && exif.gps) {
-    console.log('if exif.gps')
     let coords = gpsToCoords(exif.gps)
     props.exifGeo = coords
-    console.log('coords')
   }
-  // console.log('thumbnail', thumbnail)
   console.log('props.exifGeo', props.exifGeo)
-  let photo = await createPhoto(props, gfsPhoto).catch(err => console.error(err))
-  // sendSMS(photo, process.env.MY_PHONE)
+  let photo = await createPhoto(props, attachment)
   return photo
 }

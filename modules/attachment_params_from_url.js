@@ -1,4 +1,4 @@
-// url_to_gridfs_params.js
+// attachment_params_from_url.js
 
 const fetch = require('node-fetch')
 
@@ -11,7 +11,7 @@ module.exports = function(url) {
       let content_type = res.headers.get('Content-Type')
       console.log('content_type', content_type)
       if (content_type === 'image/jpeg') ext = '.jpg'
-      const gridParams = {
+      const attachment_params = {
         content_type: content_type,
         filename: new Date().getTime() + ext,
         buffer: ''
@@ -20,8 +20,8 @@ module.exports = function(url) {
         chunks.push(Buffer.from(chunk, 'binary'))
       })
       res.body.on('end', () => {
-        gridParams.buffer = Buffer.concat(chunks)
-        resolve(gridParams)
+        attachment_params.buffer = Buffer.concat(chunks)
+        resolve(attachment_params)
       })
     })
     .catch(error => reject(error))

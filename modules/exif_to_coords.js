@@ -1,8 +1,7 @@
 module.exports = function(gps) {
-  let lat = gps.GPSLatitude
-  let long = gps.GPSLongitude
 
-  console.log(gps)
+  const lat = gps.GPSLatitude
+  const long = gps.GPSLongitude
 
   try {
     const coords = {
@@ -18,23 +17,4 @@ module.exports = function(gps) {
     return e
   }
 
-  // Degrees + minutes/60 + seconds/3600
-  // gps.GPSLatitude: [ 33, 10, 24.02 ],
-  // gps:
-  //  { GPSLatitudeRef: 'N',
-  //    GPSLatitude: [ 33, 10, 24.02 ],
-  //    GPSLongitudeRef: 'W',
-  //    GPSLongitude: [ 117, 19, 10.3 ],
-  //    GPSAltitudeRef: 0,
-  //    GPSAltitude: 47.194902548725636,
-  //    GPSTimeStamp: [ 23, 29, 38.99 ],
-  //    GPSSpeedRef: 'K',
-  //    GPSSpeed: 0,
-  //    GPSImgDirectionRef: 'M',
-  //    GPSImgDirection: 279.80944625407164,
-  //    GPSDestBearingRef: 'M',
-  //    GPSDestBearing: 279.80944625407164,
-  //    GPSDateStamp: '2018:04:09',
-  //    GPSHPositioningError: 5
-  //  }
 }

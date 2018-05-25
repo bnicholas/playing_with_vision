@@ -14,24 +14,30 @@ const send = function(phone, message) {
   })
 }
 
-const labels = function(photo, phone) {
+const send_labels = function(photo, phone) {
   return new Promise((resolve, reject) => {
     let message = `Labels: \n ${photo.scores.join('\n')}`
-    send(phone, message).then(res => resolve(res)).catch(err => reject(err))
+    send(phone, message)
+    .then(res => resolve(res))
+    .catch(err => reject(err))
   })
 }
 
-const geolink = function(photo, phone) {
+const send_geolink = function(photo, phone) {
   return new Promise((resolve, reject) => {
     let message = `http://ford-vision.herokuapp.com/geodata/${photo._id}`
-    send(phone, message).then(res => resolve(res)).catch(err => reject(err))
+    send(phone, message)
+    .then(res => resolve(res))
+    .catch(err => reject(err))
   })
 }
 
-const saved = function(photo, phone) {
+const send_saved = function(photo, phone) {
   return new Promise((resolve, reject) => {
-    send(phone, "Photo Received").then(res => resolve(res)).catch(err => reject(err))
+    send(phone, "Photo Received")
+    .then(res => resolve(res))
+    .catch(err => reject(err))
   })
 }
 
-module.exports = {labels, geolink, saved}
+module.exports = {send_labels, send_geolink, send_saved}

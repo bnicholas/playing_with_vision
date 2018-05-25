@@ -42,41 +42,49 @@ app.on('ready', function() {
   const storage = multer.memoryStorage()
   const upload = multer({ storage: storage })
 
-  app.post('/api/upload', upload.array('photo'), async (req, res) => {
+  const apiUpload = async function(req, res) {
     const uploads = []
-    if (req.files) {
-      let ip = await public_ip(req)
-      let ipGeo = await ip_location(ip)
-      for (let params of req.files) {
-        params.host = app.get('host')
-        params.filename = new Date().getTime() + params.originalname.slice(-4)
-        params.content_type = params.mimetype
-        params.ip = ip
-        params.ipGeo = ipGeo
-        let fromFile = await processUpload(params).catch(err => console.error(err))
-        uploads.push(fromFile)
-      }
-      res.send(uploads)
-    } else {
-      res.send('No files provided')
+    let ip = await public_ip(req)
+    let ipGeo = await ip_location(ip)
+    for (let params of req.files) {
+      params.host = app.get('host')
+      params.filename = new Date().getTime() + params.originalname.slice(-4)
+      params.content_type = params.mimetype
+      params.ip = ip
+      params.ipGeo = ipGeo
+      let fromFile = await processUpload(params)
+      uploads.push(fromFile)
     }
+    return uploads
+  }
+
+  app.post('/api/upload', upload.array('photo'), (req, res) => {
+    apiUpload(req, res)
+    .then(uploads => res.send("OK"))
+    .catch(err => res.send({error: err}))
   })
 
 
   const processUpload = require('./modules/process_upload')
-  const urlToGridFsParams = require('./modules/url_to_gridfs_params')
+  const attachmentParamsFromUrl = require('./modules/attachment_params_from_url')
   const sms = require('./modules/send_sms')
 
-  app.post('/api/sms', async (req, res) => {
+  const postSms = async function (req, res) {
     const imageURL = req.body.photo
     const phone = req.body.phone
-    const params = await urlToGridFsParams(imageURL).catch(err => console.error(err))
+    const params = await attachmentParamsFromUrl(imageURL)
     params.phone = req.body.phone
-    let photo = await processUpload(params).catch(err => console.error(err))
-    let saved = await sms.saved(photo, req.body.phone).catch(err => console.error(err))
-    let labels = await sms.labels(photo, req.body.phone).catch(err => console.error(err))
-    let geo = await sms.geolink(photo, req.body.phone).catch(err => console.error(err))
-    res.send(photo)
+    let photo = await processUpload(params)
+    let saved = await sms.send_saved(photo, req.body.phone)
+    let labels = await sms.send_labels(photo, req.body.phone)
+    let geo = await sms.send_geolink(photo, req.body.phone)
+    return photo
+  }
+
+  app.post('/api/sms', (req, res) => {
+    postSms(req, res)
+    .then(photo => res.send(photo))
+    .catch(err => res.send({error: err}))
   })
 
   const Photo = require('./models/photo')
@@ -92,10 +100,10 @@ app.on('ready', function() {
   })
 
   app.get('/geodata/:photo_id', async function(req, res) {
-    let record = await Photo.findById(req.params.photo_id).exec().catch(err => console.error(err))
-    let ip = await public_ip(req).catch(err => console.error(err))
+    let record = await Photo.findById(req.params.photo_id).exec()
+    let ip = await public_ip(req)
     if (!record.ipGeo) {
-      record.ipGeo = await ip_location(ip).catch(err => console.error(err))
+      record.ipGeo = await ip_location(ip)
     }
     let locals = {photo: record}
     res.once('finish', () => {

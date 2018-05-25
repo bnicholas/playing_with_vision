@@ -1,4 +1,4 @@
-// params_to_gridfs.js
+// create_attachment.js
 
 const Attachment = require('../models/attachment')
 const bufferToStream = require('buffer-to-stream')
