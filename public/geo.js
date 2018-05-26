@@ -1,26 +1,26 @@
 const request_url = window.location.origin + '/api/image'
 const message = document.getElementById('message')
 const photo = photoJSON
-const ipGeo = photo.ipGeo
-const browserGeo = photo.browserGeo
-const exifGeo = photo.exifGeo
+const geoIp = photo.geoIp
+const geoBrowser = photo.geoBrowser
+const geoExif = photo.geoExif
 
 var geoCoords
 
-console.log('browserGeo', browserGeo)
-console.log('ipGeo', ipGeo)
-console.log('exifGeo', exifGeo)
+console.log('geoBrowser', geoBrowser)
+console.log('geoIp', geoIp)
+console.log('geoExif', geoExif)
 
-if (ipGeo) {
-  geoCoords = ipGeo
+if (geoIp) {
+  geoCoords = geoIp
   message.innerHTML = "Location from web browser location"
 }
-if (browserGeo) {
-  geoCoords = browserGeo
+if (geoBrowser) {
+  geoCoords = geoBrowser
   message.innerHTML = "Location from web browser location"
 }
-if (exifGeo) {
-  geoCoords = exifGeo
+if (geoExif) {
+  geoCoords = geoExif
   message.innerHTML = "Location from photo metadata"
 }
 
@@ -32,14 +32,14 @@ const marker = new google.maps.Marker({ map: map, position: geoCoords })
 // map.setCenter(geoCoords)
 // marker.setPosition(geoCoords)
 
-if (!exifGeo && !browserGeo && "geolocation" in navigator) {
+if (!geoExif && !geoBrowser && "geolocation" in navigator) {
   console.log('NOOOOO')
   navigator.geolocation.getCurrentPosition(pos => {
     const updated = {
       _id: photo._id,
-      browserGeo: {lat: pos.coords.latitude, lng: pos.coords.longitude}
+      geoBrowser: {lat: pos.coords.latitude, lng: pos.coords.longitude}
     }
-    const newGeoCoords = updated.browserGeo
+    const newGeoCoords = updated.geoBrowser
 
     map.panTo(newGeoCoords)
     marker.setPosition(newGeoCoords)

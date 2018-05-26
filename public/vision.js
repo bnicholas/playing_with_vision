@@ -3,8 +3,8 @@ let imageStore = {}
 
 const dragTarget = document.getElementById('drop_zone')
 const fileField = document.getElementById('photo')
-const uploadURL = window.location.href + 'api/upload'
-const allImagesURL = window.location.href + 'api/images'
+const uploadURL = window.location.origin + '/api/upload'
+const allImagesURL = window.location.origin + '/api/images'
 const formElement = document.getElementById('uploader')
 const searchElement = document.getElementById('search')
 const imageDataElement = document.getElementById('image_data')
@@ -76,7 +76,7 @@ function buildImageElement(record) {
 }
 
 function deleteImage(id) {
-  let url = `http://${window.location.host}/api/image/${id}`
+  let url = `${window.location.origin}/api/image/${id}`
   let el = document.getElementById(id)
   fetch(url, {method: 'DELETE'})
   .then(response => response.text())
@@ -165,7 +165,8 @@ function fetchAllPhotos() {
   fetch(allImagesURL, { method: 'GET' })
   .then(response => response.json())
   .then(json => {
-    json.records.forEach(record => {
+    // console.log(json)
+    json.forEach(record => {
       buildImageElementAndAppend(record)
       .then(el => {
         record.el = el
