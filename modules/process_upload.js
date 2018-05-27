@@ -4,7 +4,6 @@ const getExifData = require('./get_exif_data')
 const getVisionData = require('./get_vision_data')
 const filterLabelConfidence = require('./filter_label_confidence')
 const processThumbnail = require('./process_thumbnail')
-const processMap = require('./process_map_image')
 const createPhoto = require('./create_photo')
 const gpsToCoords = require('./exif_to_coords')
 
@@ -31,10 +30,9 @@ module.exports = async function(params) {
   }
   if (exif && exif.gps) {
     let coords = gpsToCoords(exif.gps)
-    let map = await processMap(coords)
-    props.geoExif = coords
-    props.located = true
-    props.img_map = map
+    props.coords = coords
+    props.geo_from = 'exif'
+    console.log("EXIF", props)
   }
   let photo = await createPhoto(props)
   return photo

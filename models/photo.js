@@ -1,25 +1,23 @@
 const mongoose = require('mongoose')
 const timestamps = require('mongoose-timestamp')
 const Mixed = mongoose.Schema.Types.Mixed
+const moment = require('moment')
 
 const PhotoSchema = mongoose.Schema({
-  colors: Array,
-  crop: Array,
-  exif: Mixed,
-  geoBrowser: {type: Mixed, default: false },
-  geoExif: {type: Mixed, default: false },
-  geoIp: {type: Mixed, default: false },
-  img_large: Mixed,
-  img_map: Mixed,
-  img_small: Mixed,
+  colors: { type: Array, select: false },
+  crop: { type: Array, select: false },
+  exif: { type: Mixed, select: false },
+  coords: Mixed,
+  geo_from: String,
+  img_large: { type: Mixed, select: false },
+  img_small: { type: Mixed, select: false },
   ip: String,
-  labels_raw: Array,
-  located: {type: Boolean, default: false },
+  labels_raw: { type: Array, select: true },
   phone: String,
 }, {
   strict: false,
-  toObject: { virtuals: true },
-  toJSON: { virtuals: true }
+  toObject: { virtuals: true, minimize: true },
+  toJSON: { virtuals: true, minimize: true }
 })
 
 // ADD TIMESTAMPS TO RECORDS
@@ -29,15 +27,6 @@ PhotoSchema.plugin(timestamps)
 PhotoSchema.virtual('labels').get(function() {
   return this.labels_raw.map(item => item.description)
 })
-
-PhotoSchema.virtual('mapURL').get(function(){
-  return `${process.env.HOST}/map/${this._id}`
-})
-
-PhotoSchema.virtual('mapTag').get(function(){
-  return `<img src="${this.mapURL}" />`
-})
-
 
 PhotoSchema.virtual('thumbnailURL').get(function(){
   return `${process.env.HOST}/thumbnail/${this._id}`
@@ -55,28 +44,37 @@ PhotoSchema.virtual('imageTag').get(function(){
   return `<img src="${this.imageURL}" />`
 })
 
-PhotoSchema.method('prettyGeo', function(field) {
-  let geo = this[field]
+PhotoSchema.virtual('created').get(function(){
+  return moment(this.createdAt).format('L, LT')
+})
+
+PhotoSchema.virtual('parsedCoords').get(function(){
+  let geo = this.coords
   if (geo.lat) {
-    geo.lat = Number.parseFloat(geo.lat).toFixed(3)
-    geo.lng = Number.parseFloat(geo.lng).toFixed(3)
-    console.log(geo)
+    geo.lat = Number.parseFloat(geo.lat).toFixed(2)
+    geo.lng = Number.parseFloat(geo.lng).toFixed(2)
+    let coords = {lat: geo.lat, lng: geo.lng}
+    return coords
+  } else {
+    return false
+  }
+})
+
+
+PhotoSchema.virtual('prettyGeo').get(function(){
+  let geo = this.coords
+  if (geo.lat) {
+    geo.lat = Number.parseFloat(geo.lat).toFixed(2)
+    geo.lng = Number.parseFloat(geo.lng).toFixed(2)
     return [geo.lat, geo.lng]
   } else {
     return ['none', 'none']
   }
 })
 
-PhotoSchema.virtual('bestCoords').get(function() {
-  if (this.geoExif) return { coords: this.prettyGeo('geoExif'), source: 'photo GPS' }
-  if (this.geoBrowser) return { coords: this.prettyGeo('geoBrowser'), source: 'browser' }
-  if (this.geoIp) return { coords: this.prettyGeo('geoIp'), source: 'ip lookup'}
-  else return { coords: 'none', source: 'none'}
-})
-
 // A FORMATTED ARRAY OF 'name 30.4%'
 PhotoSchema.virtual('scores').get(function() {
-  return this.labels_raw.map(item => `${item.description} ${(item.score * 100).toFixed(1) + '%'}`)
+  return this.labels_raw.map(item => `${(item.score * 100).toFixed(1) + '%'} ${item.description}`)
 })
 
 const Photo = mongoose.model('Photo', PhotoSchema)

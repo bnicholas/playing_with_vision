@@ -16,6 +16,42 @@ h4 img, h4 span {
   opacity: 0;
 }
 
+.map_modal {
+  width: 95vw !important;
+  height: 95vh !important;
+}
+
+.map_holder {
+  width: 100%;
+  height: 100%;
+}
+
+.record_table {
+  font-size: .9em;
+}
+
+.record_table th {
+  text-transform: uppercase;
+  font-size: .8em;
+}
+
+.columns {
+  column-count: 3;
+  column-gap: 2em;
+  column-rule-style: solid;
+  column-rule-width: 1px;
+  column-rule-color: #ccc;
+
+  /* column-rule:
+  column-span:
+  column-width: */
+}
+.columns span {
+  display: block;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
 .upload_container h4 img {
   display: block;
   position: absolute;
@@ -25,6 +61,15 @@ h4 img, h4 span {
   height: auto;
   z-index: -1;
 }
+
+.geo_from {
+  position: relative;
+  /* text-align: center; */
+}
+
+.geo_from .browser { background: lightblue; }
+.geo_from .exif { background: orange; }
+.geo_from .ip { background: grey; }
 
 
 .upload_container {

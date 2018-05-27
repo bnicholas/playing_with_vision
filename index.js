@@ -81,10 +81,14 @@ app.on('ready', function() {
   const Photo = require('./models/photo')
 
   app.put('/api/image', async (req, res) => {
-    if (!req.body._id) res.send('no id was provided')
-    let photo = await Photo.findById(req.body._id).exec()
-    photo.geoBrowser = req.body.geoBrowser || false
-    if (photo.geoBrowser) photo.located = true
+    if (!req.body.id) res.send('no id was provided')
+    let photo = await Photo.findById(req.body.id).exec()
+    if (req.body.geo_from === 'browser' && req.body.coords) {
+      photo.geo_from = 'browser'
+      photo.located = true
+      let coords = req.body.coords
+      photo.coords = {lat: parseInt(coords.lat), lng: parseInt(coords.lng)}
+    }
     let saved = await photo.save()
     if (saved) res.send(saved)
     else res.send(new Error('record was not saved'))
@@ -93,8 +97,10 @@ app.on('ready', function() {
   app.get('/geodata/:photo_id', async function(req, res) {
     let record = await Photo.findById(req.params.photo_id).exec()
     let ip = await public_ip(req)
-    if (!record.geoIp) {
-      record.geoIp = await ip_location(ip)
+    console.log('geo_from', record.geo_from)
+    if (!record.geo_from === 'exif' && !record.geo_from === 'browser') {
+      record.coords = await ip_location(ip)
+      record.geo_from = 'ip'
       record.located = true
     }
     let locals = {photo: record}
@@ -106,7 +112,7 @@ app.on('ready', function() {
   })
 
   app.get('/image/:id', (req, res) => {
-    Photo.findById(req.params.id, (err, photo) => {
+    Photo.findById(req.params.id, 'img_large', (err, photo) => {
       if (err) res.send(err)
       res.contentType(photo.img_large.content_type)
       res.send(photo.img_large.buffer.buffer)
@@ -114,20 +120,11 @@ app.on('ready', function() {
   })
 
   app.get('/thumbnail/:id', (req, res) => {
-    Photo.findById(req.params.id, (err, photo) => {
+    Photo.findById(req.params.id, 'img_small', (err, photo) => {
       if (err) res.send(err)
       res.contentType(photo.img_small.content_type)
       res.send(photo.img_small.buffer.buffer)
     })
-  })
-
-  app.get('/map/:id', (req, res) => {
-    Photo.findById(req.params.id).exec()
-    .then(record => {
-      res.contentType(record.img_map.content_type)
-      res.send(record.img_map.buffer.buffer)
-    })
-    .catch(err => res.send({error: err}))
   })
 
   app.delete('/api/image/:id', (req, res) => {
@@ -138,23 +135,21 @@ app.on('ready', function() {
 
   app.get('/api/images', async (req, res) => {
     Photo.find().exec()
-    .then(images => res.send(images))
-    .catch(err => res.send({error: err}))
+    .then(images => res.json(images))
+    .catch(err => res.json({error: err}))
   })
 
   app.get('/upload', (req, res) => res.render('upload'))
 
   app.get('/', (req, res) => {
     Photo.find().exec()
-    .then(records => res.render('index', { photos: records }))
-    .catch(err => res.render('index', { photos: [], error: err }))
-  })
-
-  const mapImages = require('./modules/process_map_image')
-  app.get('/map', (req, res) => {
-    mapImages()
-    .then(images => res.send(images))
-    .catch(err => res.send({error: err}))
+    .then(records => {
+      res.render('records', { photos: records })
+    })
+    .catch(err => {
+      console.log("ERROR", err)
+      res.render('records', { photos: [], error: err })
+    })
   })
 
   app.listen(process.env.PORT || 5000, '0.0.0.0', () => {
