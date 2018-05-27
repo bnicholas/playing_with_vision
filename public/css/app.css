@@ -183,3 +183,5 @@ ul {
 .hidden {
   opacity: .2;
 }
+
+tr.hidden { display: none; }

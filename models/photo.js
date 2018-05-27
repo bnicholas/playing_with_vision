@@ -51,10 +51,9 @@ PhotoSchema.virtual('created').get(function(){
 PhotoSchema.virtual('parsedCoords').get(function(){
   let geo = this.coords
   if (geo.lat) {
-    geo.lat = Number.parseFloat(geo.lat).toFixed(2)
-    geo.lng = Number.parseFloat(geo.lng).toFixed(2)
-    let coords = {lat: geo.lat, lng: geo.lng}
-    return coords
+    let lat = parseFloat(geo.lat.toFixed(3))
+    let lng = parseFloat(geo.lng.toFixed(3))
+    return {lat: lat, lng: lng}
   } else {
     return false
   }

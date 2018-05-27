@@ -1,0 +1,22 @@
+<tr data-id="<%- photo._id %>">
+  <td>
+    <a href="#" data-image_modal data-id="<%- photo._id %>">
+      <%- photo.thumbnailTag %>
+    </a>
+  </td>
+  <td>
+    <div class="columns">
+      <% photo.scores.forEach(function(tag) { %>
+        <span><%= tag %></span>
+      <% }) %>
+    </div>
+  </td>
+  <td>
+    <div class="geo_from">
+      <span class="label <%- photo.geo_from %>" data-tooltip title="<%= photo.prettyGeo %>"><%= photo.geo_from %></span>
+    </div>
+
+  </td>
+  <td><%= photo.created %></td>
+  <td> <a href="#" data-url="/api/image/<%- photo.id %>" data-delete data-id="<%- photo._id %>" class="delete_action">X</a> </td>
+</tr>

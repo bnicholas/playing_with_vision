@@ -11,7 +11,6 @@ module.exports = function(gps) {
     if (gps.GPSLongitudeRef === 'W') {
       coords.lng = coords.lng * -1
     }
-    console.log(coords)
     return coords
   } catch (e) {
     return e

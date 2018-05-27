@@ -34,32 +34,9 @@
             <th>actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="append_target">
           <% photos.forEach(photo => { %>
-            <tr>
-              <td>
-                <a href="#" onclick='fullSize("<%- photo._id %>")'>
-                  <%- photo.thumbnailTag %>
-                </a>
-              </td>
-              <td>
-                <div class="columns">
-                  <% photo.scores.forEach(function(tag) { %>
-                    <span><%= tag %></span>
-                  <% }) %>
-                </div>
-              </td>
-              <td>
-                <div class="geo_from">
-                  <!-- <span class="label <%- photo.geo_from %>"><%= photo.geo_from %></span>
-                  <a href="#" class="coords"><%= photo.prettyGeo %></a> -->
-                  <span class="label <%- photo.geo_from %>" data-tooltip title="<%= photo.prettyGeo %>"><%= photo.geo_from %></span>
-                </div>
-
-              </td>
-              <td><%= photo.created %></td>
-              <td> <a href="#" class="delete_action">X</a> </td>
-            </tr>
+            <%- include('partials/record', {photo: photo}); %>
           <% }) %>
         </tbody>
       </table>

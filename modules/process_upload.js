@@ -6,6 +6,7 @@ const filterLabelConfidence = require('./filter_label_confidence')
 const processThumbnail = require('./process_thumbnail')
 const createPhoto = require('./create_photo')
 const gpsToCoords = require('./exif_to_coords')
+const dietPhoto = require('./diet_photo')
 
 module.exports = async function(params) {
   if (!params.buffer) reject(new Error('params.buffer was not supplied'))
@@ -32,8 +33,8 @@ module.exports = async function(params) {
     let coords = gpsToCoords(exif.gps)
     props.coords = coords
     props.geo_from = 'exif'
-    console.log("EXIF", props)
   }
+
   let photo = await createPhoto(props)
-  return photo
+  return dietPhoto(photo)
 }

@@ -44,13 +44,24 @@ app.on('ready', function() {
       params.content_type = params.mimetype
       params.ip = ip
       params.geoIp = geoIp
-      let fromFile = await processUpload(params)
-      uploads.push(fromFile)
+      let photo = await processUpload(params)
+      let upload = {}
+      let view = app.render('partials/record', {photo: photo}, (err, html) => {
+        upload.markup = JSON.stringify(html)
+        upload.record = photo
+      })
+      uploads.push(upload)
     }
     return uploads
   }
 
   app.post('/api/upload', upload.array('photo'), (req, res) => {
+    apiUpload(req, res)
+    .then(uploads => res.send(uploads))
+    .catch(err => res.send({error: err}))
+  })
+
+  app.post('/api/index/upload', upload.array('photo'), (req, res) => {
     apiUpload(req, res)
     .then(uploads => res.send(uploads))
     .catch(err => res.send({error: err}))
@@ -142,7 +153,7 @@ app.on('ready', function() {
   app.get('/upload', (req, res) => res.render('upload'))
 
   app.get('/', (req, res) => {
-    Photo.find().exec()
+    Photo.find().sort({createdAt: 'desc'}).exec()
     .then(records => {
       res.render('records', { photos: records })
     })
