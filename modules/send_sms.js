@@ -1,13 +1,15 @@
-const accountSid = process.env.TWILIO_SID
-const authToken = process.env.TWILIO_TOKEN
-const client = require('twilio')(accountSid, authToken)
 
 // GIVE IT A PHOTO RECORD AND A PHONE NUMBER
 // AND IT WILL SEND A FORMATED SMS MESSAGE
 const send = function(phone, message) {
+
+  const accountSid = process.env.TWILIO_SID
+  const authToken = process.env.TWILIO_TOKEN
+  const client = require('twilio')(accountSid, authToken)
+
   return new Promise((resolve, reject) => {
     client.messages
-    .create({ body: message, from: `+1${process.env.TWILIO_PHONE}`, to: phone })
+    .create({ body: message, from: process.env.TWILIO_PHONE, to: phone })
     .then(response => resolve(response.sid))
     .catch(error => reject(error))
     .done()

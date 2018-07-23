@@ -3,14 +3,12 @@ const util = require('util')
 const express = require('express')
 const app = express()
 const mongoose = require('mongoose')
-
 const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
 const responseTime = require('response-time')
 
 process.on('unhandledRejection', (reason, p) => {
   console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
-  // application specific logging, throwing an error, or other logic here
 })
 
 app.use(express.static('public'))
