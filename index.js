@@ -144,9 +144,9 @@ app.on('ready', function() {
     .catch(err => res.send({error: err}))
   })
 
-  app.get('/api/images', async (req, res) => {
-    Photo.find().exec()
-    .then(images => res.json(images))
+  app.get('/api/images', (req, res) => {
+    Photo.find({}).exec()
+    .then(images => res.send(images))
     .catch(err => res.json({error: err}))
   })
 

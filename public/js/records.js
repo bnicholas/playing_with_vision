@@ -1,4 +1,4 @@
-let photos
+// let photos
 let imageStore = {}
 
 // ELEMENTS & LISTENERS
@@ -21,19 +21,31 @@ map_link.addEventListener('click', evt => {
   map.fitBounds(bounds)
 })
 
-function initRecordListeners() {
-  const thumbnails = document.querySelectorAll('a[data-image_modal]')
-  const deleteLinks = document.querySelectorAll('a[data-delete]')
-  // thumbnails.forEach(thumb => thumb.addEventListener('click', dispatch(evt, 'BIG_IMAGE')))
-  thumbnails.forEach(thumb => thumb.addEventListener('click', handleBigImage))
-  // deleteLinks.forEach(item => item.addEventListener('click', dispatch(evt, 'DELETE_RECORD')))
-  deleteLinks.forEach(item => item.addEventListener('click', handleDelete))
+function inlineSVGs() {
+  let mySVGsToInject = document.querySelectorAll('img.inject-me')
+  SVGInjector(mySVGsToInject)
+}
+
+function initRecordListener(el) {
+  $(el)
+  .on('click', '[data-delete]', handleDelete)
+  .on('click', '[data-image_modal]', handleBigImage)
 }
 
 // HANDLERS
-function handleBigImage(evt) {
-  let id = evt.target.parentElement.getAttribute('data-id')
-  console.log(id)
+function handleDelete() {
+  let id = this.getAttribute('data-id')
+  let url = this.getAttribute('data-url')
+  let tr = document.querySelector(`tr[data-id="${id}"]`)
+  fetch(url, {method: 'DELETE'})
+  .then(response => response.text())
+  .then(text => tableBody.removeChild(tr))
+  .catch(error => console.log(error))
+  imageStore[id].deleting = true
+}
+
+function handleBigImage() {
+  let id = this.getAttribute('data-id')
   let img_tag = `<img src="/image/${id}" class="big_image" />`
   image_holder.innerHTML = img_tag
   $('#imgModal').foundation('open')
@@ -57,33 +69,20 @@ function handleUpload() {
   fetch('/api/index/upload', { method: 'POST', body: form })
   .then(response => response.json())
   .then(records => {
-    console.log(records)
     records.forEach(upload => {
       tableBody.insertAdjacentHTML('afterbegin', JSON.parse(upload.markup))
       addImageToStore(upload.record)
+      initRecordListener(imageStore[upload.record._id].el)
     })
   })
   .then(() => {
-    initRecordListeners()
+    inlineSVGs()
     removeUploadIndicator()
     formElement.reset()
   })
   .catch(error => console.log('ERROR', error))
 }
 
-function handleDelete(evt) {
-  evt.preventDefault()
-  let id = evt.target.getAttribute('data-id')
-  let url = evt.target.getAttribute('data-url')
-  let tr = document.querySelector(`tr[data-id="${id}"]`)
-  console.log(id, url, tr)
-  fetch(url, {method: 'DELETE'})
-  .then(response => response.text())
-  .then(text => tableBody.removeChild(tr))
-  .catch(error => console.log(error))
-  // console.log(imageStore[id])
-  imageStore[id].deleting = true
-}
 
 // DOM MANIPULATION
 function addUploadIndicator() {
@@ -110,7 +109,7 @@ function addImageToStore(record) {
     }
   }, {
     set: (obj, prop, value) => {
-      if (prop === 'added') {
+      if (prop === 'added' && obj.coords) {
         obj.map.info_window.open(map, obj.map.marker)
         obj.map.marker.addListener('click', () => obj.map.info_window.open(map, obj.map.marker))
         bounds.extend(obj.map.position)
@@ -130,7 +129,6 @@ function addImageToStore(record) {
   imageStore[record._id].added = true
 }
 
-
 // INITIALIZE
 
 function fetchAllPhotos() {
@@ -143,13 +141,12 @@ function fetchAllPhotos() {
 }
 
 async function init() {
-  photos = await fetchAllPhotos()
+  let photos = await fetchAllPhotos()
   photos.forEach(record => {
-    console.log(record.coords, record.parsedCoords)
     addImageToStore(record)
+    initRecordListener(imageStore[record._id].el)
   })
-  initRecordListeners()
-  // initMap()
+  inlineSVGs()
   $(document).foundation()
 }
 

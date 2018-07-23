@@ -19,6 +19,7 @@ h4 img, h4 span {
 .map_modal {
   width: 95vw !important;
   height: 95vh !important;
+  z-index: 9999;
 }
 
 .map_holder {
@@ -66,6 +67,10 @@ h4 img, h4 span {
   position: relative;
   /* text-align: center; */
 }
+.geo_from .tooltip {
+  z-index: 1005;
+}
+
 
 .geo_from .browser { background: lightblue; }
 .geo_from .exif { background: orange; }
@@ -97,7 +102,7 @@ h4 img, h4 span {
 .thumbnail {
   display: inline-block;
   margin: 5px;
-  height: 150px;
+  height: 100px;
   width: auto;
   vertical-align: top;
 }
@@ -182,6 +187,17 @@ ul {
 
 .hidden {
   opacity: .2;
+}
+
+a.thumbnail {
+  display: inline-block;
+  height: auto;
+  width: auto;
+}
+
+a.thumbnail img {
+  min-width: 120px;
+  height: auto;
 }
 
 tr.hidden { display: none; }

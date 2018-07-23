@@ -8,7 +8,7 @@ const PhotoSchema = mongoose.Schema({
   crop: { type: Array, select: false },
   exif: { type: Mixed, select: false },
   coords: Mixed,
-  geo_from: String,
+  geo_from: { type: String, default: 'none' },
   img_large: { type: Mixed, select: false },
   img_small: { type: Mixed, select: false },
   ip: String,
@@ -50,23 +50,22 @@ PhotoSchema.virtual('created').get(function(){
 
 PhotoSchema.virtual('parsedCoords').get(function(){
   let geo = this.coords
-  if (geo.lat) {
+  try {
     let lat = parseFloat(geo.lat.toFixed(3))
     let lng = parseFloat(geo.lng.toFixed(3))
     return {lat: lat, lng: lng}
-  } else {
+  } catch (e) {
     return false
   }
 })
 
-
 PhotoSchema.virtual('prettyGeo').get(function(){
   let geo = this.coords
-  if (geo.lat) {
+  try {
     geo.lat = Number.parseFloat(geo.lat).toFixed(2)
     geo.lng = Number.parseFloat(geo.lng).toFixed(2)
     return [geo.lat, geo.lng]
-  } else {
+  } catch (e) {
     return ['none', 'none']
   }
 })

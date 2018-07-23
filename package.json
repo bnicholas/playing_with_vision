@@ -24,10 +24,12 @@
 		"mongoose-timestamp": "^0.6.0",
 		"multer": "^1.3.0",
 		"node-fetch": "^2.1.2",
+		"node-inline-svg": "^1.0.1",
 		"phantom": "^4.0.12",
 		"public-ip": "^2.4.0",
 		"request-ip": "^2.0.2",
 		"response-time": "^2.3.2",
+		"svg-injector": "^1.1.3",
 		"twilio": "^3.17.0"
 	},
 	"devDependencies": {

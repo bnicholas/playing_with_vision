@@ -1,6 +1,6 @@
 <tr data-id="<%- photo._id %>">
   <td>
-    <a href="#" data-image_modal data-id="<%- photo._id %>">
+    <a href="#" data-image_modal data-id="<%- photo._id %>" class="thumbnail">
       <%- photo.thumbnailTag %>
     </a>
   </td>
@@ -13,10 +13,14 @@
   </td>
   <td>
     <div class="geo_from">
-      <span class="label <%- photo.geo_from %>" data-tooltip title="<%= photo.prettyGeo %>"><%= photo.geo_from %></span>
+      <span class="label tooltip <%- photo.geo_from %>" data-tooltip title="<%= photo.prettyGeo %>"><%= photo.geo_from %></span>
     </div>
 
   </td>
   <td><%= photo.created %></td>
-  <td> <a href="#" data-url="/api/image/<%- photo.id %>" data-delete data-id="<%- photo._id %>" class="delete_action">X</a> </td>
+  <td>
+    <a href="#" data-url="/api/image/<%- photo._id %>" data-delete data-id="<%- photo._id %>" class="delete_action">
+      <img class="inject-me" data-src="/svg/circle_x.svg" />
+    </a>
+  </td>
 </tr>

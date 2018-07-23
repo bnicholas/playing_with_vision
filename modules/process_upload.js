@@ -29,8 +29,12 @@ module.exports = async function(params) {
     labels_raw: labels,
     phone: params.phone,
   }
-  if (exif && exif.gps) {
+  if (exif && exif.gps && exif.gps.GPSLatitude) {
+    console.log('this shouldnt register')
+    console.log('exif.gps', exif.gps)
     let coords = gpsToCoords(exif.gps)
+
+    console.log('coords', coords)
     props.coords = coords
     props.geo_from = 'exif'
   }
